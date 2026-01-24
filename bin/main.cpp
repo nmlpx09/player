@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
         } else if (input == KEY_DOWN && ctx->IsEnd()) {
             current = std::min(directories.size() - 1, current + 1);
             win->MusicListOut(directories, current);
-        } else if (input == 'p') {
+        } else if (input == 'p' && ctx->IsEnd()) {
             ctx->Start();
 
             auto path = directories[current];
