@@ -2,9 +2,9 @@
 
 audio flac player for smallest system
 
-ui: ncurses;
-audio output: alsa or pulseaudio;
-flac: 192000, 96000, 48000, 44100 Hz, 16 or 24 bit stereo format;
+ui: ncurses
+audio output: alsa or pulseaudio
+flac: 192000, 96000, 48000, 44100 Hz, 16 or 24 bit stereo format
 
 # requirement
 
