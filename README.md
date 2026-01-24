@@ -1,6 +1,6 @@
 # about
 
-ncurses flac audio player for 192000, 96000, 48000, 44100 Hz 16 or 24 bit stereo format,
+ncurses flac audio player for 192000, 96000, 48000, 44100 Hz, 16 or 24 bit stereo format,
 supported alsa and pulseaudio audio output
 
 # requirement
