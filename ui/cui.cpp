@@ -27,7 +27,7 @@ void TCUI::Init() noexcept {
 }
 
 void TCUI::Close() noexcept {
-    if(WinMusicList != nullptr) {
+    if (WinMusicList != nullptr) {
         delwin(WinMusicList);
     }
 
@@ -68,8 +68,8 @@ void TCUI::MusicListOut(
 
         auto message = directories[i].filename().string();
 
-        if (message.size() >= WinWidth ) {
-            message.resize(WinWidth);
+        if (message.size() >= WinWidth - 2) {
+            message.resize(WinWidth - 2);
         }
 
         mvwprintw(WinMusicList, j, 1, "%s", message.c_str());

@@ -1,7 +1,10 @@
 # about
 
-ncurses flac audio player for 192000, 96000, 48000, 44100 Hz, 16 or 24 bit stereo format,
-supported alsa and pulseaudio audio output
+audio flac player for smallest system
+
+ui: ncurses;
+audio output: alsa or pulseaudio;
+flac: 192000, 96000, 48000, 44100 Hz, 16 or 24 bit stereo format;
 
 # requirement
 
@@ -10,6 +13,7 @@ supported alsa and pulseaudio audio output
 3. libasound2-dev
 4. libflac++-dev
 5. libncurses5-dev
+6. libpulse0
 
 # build
 
@@ -18,3 +22,11 @@ make
 # install
 
 make install
+
+# control
+
+1. KEY_UP - up in  music list
+2. KEY_DOWN - down music list
+3. q - quit
+4. p - play
+5. s - stop (with small delay)
