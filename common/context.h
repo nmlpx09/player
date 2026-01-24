@@ -2,6 +2,7 @@
 
 #include "types.h"
 
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
@@ -20,7 +21,7 @@ public:
     std::condition_variable WriteCv;
     std::condition_variable ReadCv;
 private:
-    bool End = true;
+    std::atomic_bool End = true;
 };
 
 using TContextPtr = std::shared_ptr<TContext>;
