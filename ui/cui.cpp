@@ -38,7 +38,7 @@ void TCUI::Close() noexcept {
     endwin();
 }
 
-void TCUI::MusicListOut(
+void TCUI::MusicListDraw(
     const std::vector<std::filesystem::path>& directories,
     std::size_t current
 ) noexcept {
@@ -78,7 +78,7 @@ void TCUI::MusicListOut(
     wrefresh(WinMusicList);
 }
 
-void TCUI::MainOut(const std::string& message) noexcept {
+void TCUI::StatusDraw(const std::string& message) noexcept {
     if (WinMain == nullptr) {
         return;
     }

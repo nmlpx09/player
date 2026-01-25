@@ -42,7 +42,7 @@ void Write(TContextPtr ctx, NWrite::TWritePtr write, NUI::TUIPtr ui) noexcept {
 
         if (auto ec = write->Write(popQueue); ec) {
             std::string error = "write error: " + ec.message();
-            ui->MainOut(error);
+            ui->StatusDraw(error);
             break;
         }
     }
@@ -71,18 +71,18 @@ void Read(TContextPtr ctx, std::vector<std::filesystem::path> files, NUI::TUIPtr
         NRead::TReadPtr read = std::make_unique<NRead::TFlac>();
         if (auto result = read->Init(file.string()); !result) {
             std::string error = "read init error: {} " + result.error().message();
-            ui->MainOut(error);
+            ui->StatusDraw(error);
             return;
         } else {
             format = result.value();
         }
 
         std::string currentFile = file.filename().string() + "; " +
-                                  std::to_string(format.SampleRate) + "hz " +
-                                  std::to_string(format.BitsPerSample) + "bps " +
-                                  std::to_string(format.NumChannels) + "ch";
+            std::to_string(format.SampleRate) + "hz " +
+            std::to_string(format.BitsPerSample) + "bps " +
+            std::to_string(format.NumChannels) + "ch";
 
-        ui->MainOut(currentFile);
+        ui->StatusDraw(currentFile);
 
         while (!ctx->IsEnd()) {
             std::unique_lock<std::mutex> ulock{ctx->Mutex};
@@ -95,7 +95,7 @@ void Read(TContextPtr ctx, std::vector<std::filesystem::path> files, NUI::TUIPtr
 
             if (auto result = read->Read(pushQueue); !result) {
                 std::string error = "read error: {} " + result.error().message();
-                ui->MainOut(error);
+                ui->StatusDraw(error);
                 break;
             } else if (!result.value()) {
                 break;
@@ -103,17 +103,11 @@ void Read(TContextPtr ctx, std::vector<std::filesystem::path> files, NUI::TUIPtr
         }
     }
 
-    ui->MainOut("");
+    ui->StatusDraw("");
     ctx->Stop();
 } 
 
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        std::cerr << "run: play dir" << std::endl;
-        return 1;
-    }
-
-    std::filesystem::path path = std::string{argv[1]};
+std::vector<std::filesystem::path> GetDirList(const std::filesystem::path& path) {
     std::vector<std::filesystem::path> directories;
 
     if (std::filesystem::is_directory(path)) {
@@ -122,23 +116,43 @@ int main(int argc, char *argv[]) {
                 directories.push_back(entry.path());
             }
         }
+    }
+    std::sort(directories.begin(), directories.end());
+    return directories;
+}
+
+std::vector<std::filesystem::path> GetFileList(const std::filesystem::path& path) {
+    std::vector<std::filesystem::path> files;
+
+    if (std::filesystem::is_directory(path)) {
+        for (const auto& entry : std::filesystem::directory_iterator(path)) {
+            if (TFormatPermited::Format.contains(entry.path().extension())) {
+                files.push_back(entry.path());
+            }
+        }
     } else {
-        std::cerr << "open dir error : " << path << std::endl;
+        if (TFormatPermited::Format.contains(path.extension())) {
+            files.push_back(path);
+        }
+    }
+    std::sort(files.begin(), files.end());
+    return files;
+}
+
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        std::cerr << "run: play dir" << std::endl;
         return 1;
     }
+
+    auto basePath = std::string{argv[1]};
+
+    auto directories = GetDirList(basePath);
 
     if (directories.empty()) {
-        std::cerr << "opem music list error : " << path << std::endl;
+        std::cerr << "opem music list error: " << basePath << std::endl;
         return 1;
     }
-
-    std::sort(directories.begin(), directories.end());
-
-    auto ctx = std::make_shared<TContext>();
-
-    std::size_t current = 0;
-
-    auto win = std::make_shared<NUI::TCUI>(WIN_WIDTH, WIN_HIGHT);
 
     std::string device;
     if (argc == 3) {
@@ -154,9 +168,15 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    win->Init();
-    win->MusicListOut(directories, current);
-    win->MainOut("");
+    std::size_t current = 0;
+
+    auto ui = std::make_shared<NUI::TCUI>(WIN_WIDTH, WIN_HIGHT);
+
+    ui->Init();
+    ui->MusicListDraw(directories, current);
+    ui->StatusDraw("");
+
+    auto ctx = std::make_shared<TContext>();
 
     auto input = 0;
     while ((input = getch()) != ERR) {
@@ -165,30 +185,17 @@ int main(int argc, char *argv[]) {
             break;
         } else if (input == KEY_UP && ctx->IsEnd()) {
             current = current == 0 ? 0 : current - 1;
-            win->MusicListOut(directories, current);
+            ui->MusicListDraw(directories, current);
         } else if (input == KEY_DOWN && ctx->IsEnd()) {
             current = std::min(directories.size() - 1, current + 1);
-            win->MusicListOut(directories, current);
+            ui->MusicListDraw(directories, current);
         } else if (input == 'p' && ctx->IsEnd()) {
             ctx->Start();
 
-            auto path = directories[current];
+            auto files = GetFileList(directories[current]);
 
-            std::vector<std::filesystem::path> files;
-            if (std::filesystem::is_directory(path)) {
-                for (const auto& entry : std::filesystem::directory_iterator(path)) {
-                    if (TFormatPermited::Format.contains(entry.path().extension())) {
-                        files.push_back(entry.path());
-                    }
-                }
-            } else {
-                if (TFormatPermited::Format.contains(path.extension())) {
-                    files.push_back(path);
-                }
-            }
-            std::sort(files.begin(), files.end());
-            std::thread tWrite(Write, ctx, write, win);
-            std::thread tRead(Read, ctx, std::move(files), win);
+            std::thread tWrite(Write, ctx, write, ui);
+            std::thread tRead(Read, ctx, std::move(files), ui);
 
             tWrite.detach();
             tRead.detach();
@@ -197,7 +204,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    win->Close();
+    ui->Close();
 
     return 0;
 }

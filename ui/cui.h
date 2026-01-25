@@ -15,8 +15,8 @@ public:
     TCUI& operator=(const TCUI&) = delete;
     TCUI& operator=(TCUI&&) = delete;
 
-    void MusicListOut(const std::vector<std::filesystem::path>& musicList, std::size_t currentPos) noexcept override;
-    void MainOut(const std::string& message) noexcept override;
+    void MusicListDraw(const std::vector<std::filesystem::path>& musicList, std::size_t currentPos) noexcept override;
+    void StatusDraw(const std::string& message) noexcept override;
     void Init() noexcept override;
     void Close() noexcept override;
 private:
