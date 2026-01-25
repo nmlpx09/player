@@ -38,7 +38,7 @@ void TCUI::Close() noexcept {
     endwin();
 }
 
-void TCUI::MusicListDraw(
+void TCUI::ListDraw(
     const std::vector<std::filesystem::path>& directories,
     std::size_t current
 ) noexcept {
@@ -57,7 +57,6 @@ void TCUI::MusicListDraw(
     wclear(WinMusicList);
     wattron(WinMusicList, COLOR_PAIR(2));
     box(WinMusicList, 0, 0);
-    mvwprintw(WinMusicList, 0, 1, "%s", MusicListTitle.c_str());
 
     for (std::size_t i = begin, j = 1; i != end; ++j, ++i) {
         if (current == i) {
@@ -66,10 +65,13 @@ void TCUI::MusicListDraw(
             wattron(WinMusicList, COLOR_PAIR(2));
         }
 
-        auto message = directories[i].filename().string();
+        std::string message;
+        if (i < directories.size()) {
+            message = directories[i].filename().string();
 
-        if (message.size() >= WinWidth - 2) {
-            message.resize(WinWidth - 2);
+            if (message.size() >= WinWidth - 2) {
+                message.resize(WinWidth - 2);
+            }
         }
 
         mvwprintw(WinMusicList, j, 1, "%s", message.c_str());

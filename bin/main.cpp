@@ -52,6 +52,7 @@ void Write(TContextPtr ctx, NWrite::TWritePtr write, NUI::TUIPtr ui) noexcept {
 void Read(TContextPtr ctx, std::vector<std::filesystem::path> files, NUI::TUIPtr ui) noexcept {
     const auto delta = std::chrono::milliseconds(500);
 
+    std::size_t current = 0;
     for (const auto& file: files) {
         if (ctx->IsEnd()) {
             break;
@@ -83,6 +84,7 @@ void Read(TContextPtr ctx, std::vector<std::filesystem::path> files, NUI::TUIPtr
             std::to_string(format.NumChannels) + "ch";
 
         ui->StatusDraw(currentFile);
+        ui->ListDraw(files, current++);
 
         while (!ctx->IsEnd()) {
             std::unique_lock<std::mutex> ulock{ctx->Mutex};
@@ -173,7 +175,7 @@ int main(int argc, char *argv[]) {
     auto ui = std::make_shared<NUI::TCUI>(WIN_WIDTH, WIN_HIGHT);
 
     ui->Init();
-    ui->MusicListDraw(directories, current);
+    ui->ListDraw(directories, current);
     ui->StatusDraw("");
 
     auto ctx = std::make_shared<TContext>();
@@ -185,10 +187,10 @@ int main(int argc, char *argv[]) {
             break;
         } else if (input == KEY_UP && ctx->IsEnd()) {
             current = current == 0 ? 0 : current - 1;
-            ui->MusicListDraw(directories, current);
+            ui->ListDraw(directories, current);
         } else if (input == KEY_DOWN && ctx->IsEnd()) {
             current = std::min(directories.size() - 1, current + 1);
-            ui->MusicListDraw(directories, current);
+            ui->ListDraw(directories, current);
         } else if (input == 'p' && ctx->IsEnd()) {
             ctx->Start();
 
@@ -200,6 +202,7 @@ int main(int argc, char *argv[]) {
             tWrite.detach();
             tRead.detach();
         } else if (input == 's') {
+            ui->ListDraw(directories, current);
             ctx->Stop();
         }
     }

@@ -15,7 +15,7 @@ public:
     TCUI& operator=(const TCUI&) = delete;
     TCUI& operator=(TCUI&&) = delete;
 
-    void MusicListDraw(const std::vector<std::filesystem::path>& musicList, std::size_t currentPos) noexcept override;
+    void ListDraw(const std::vector<std::filesystem::path>& musicList, std::size_t currentPos) noexcept override;
     void StatusDraw(const std::string& message) noexcept override;
     void Init() noexcept override;
     void Close() noexcept override;
@@ -25,7 +25,6 @@ private:
 
     std::size_t WinWidth = 60;
     std::size_t WinHight = 10;
-    std::string MusicListTitle = "music list";
 };
 
 }
