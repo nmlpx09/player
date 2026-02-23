@@ -10,11 +10,8 @@
 #include <chrono>
 #include <filesystem>
 #include <iostream>
-#include <optional>
 #include <memory>
-#include <mutex>
 #include <thread>
-#include <vector>
 
 void Write(TContextPtr ctx, NWrite::TWritePtr write, NUI::TUIPtr ui) noexcept {
     auto getPayload = [=] () noexcept {
@@ -99,7 +96,7 @@ void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
         }
     }
 
-    ui->StatusDraw("");
+    ui->StatusClean();
 }
 
 void BuildFileSystem(TFileSystem& fileSystem, const std::filesystem::path& base, const std::filesystem::path& current) {
@@ -145,7 +142,7 @@ int main(int argc, char *argv[]) {
 
     ui->Init();
     ui->ListDraw(files, position);
-    ui->StatusDraw("");
+    ui->StatusClean();
 
     auto ctx = std::make_shared<TContext>();
 

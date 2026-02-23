@@ -17,6 +17,7 @@ public:
 
     void ListDraw(const TFiles& filesList, std::size_t currentPos) noexcept override;
     void StatusDraw(const std::string& message) noexcept override;
+    void StatusClean() noexcept override;
     void Init() noexcept override;
     void Close() noexcept override;
     ECommands GetCommand() noexcept override;

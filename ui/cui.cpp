@@ -91,6 +91,15 @@ void TCUI::StatusDraw(const std::string& message) noexcept {
     wrefresh(WinMain);
 }
 
+void TCUI::StatusClean() noexcept {
+    if (WinMain == nullptr) {
+        return;
+    }
+    wclear(WinMain);
+    mvwprintw(WinMain, 0, 0, "%s", "");
+    wrefresh(WinMain);
+}
+
 ECommands TCUI::GetCommand() noexcept {
     auto input = 0;
 
