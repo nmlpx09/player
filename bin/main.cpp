@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <common/context.h>
+#include <common/types.h>
 #include <read/flac.h>
 #include <ui/cui.h>
 
@@ -49,11 +50,16 @@ void Write(TContextPtr ctx, NWrite::TWritePtr write, NUI::TUIPtr ui) noexcept {
     ctx->Stop();
 }
 
-void Read(TContextPtr ctx, std::vector<std::filesystem::path> files, NUI::TUIPtr ui) noexcept {
+void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
     const auto delta = std::chrono::milliseconds(500);
 
     std::size_t current = 0;
     for (const auto& file: files) {
+
+        if (std::filesystem::is_directory(file) || !TFormatPermited::Format.contains(file.extension())) {
+            continue;
+        }
+
         if (ctx->IsEnd()) {
             break;
         }
@@ -107,38 +113,23 @@ void Read(TContextPtr ctx, std::vector<std::filesystem::path> files, NUI::TUIPtr
 
     ui->StatusDraw("");
     ctx->Stop();
-} 
-
-std::vector<std::filesystem::path> GetDirList(const std::filesystem::path& path) {
-    std::vector<std::filesystem::path> directories;
-
-    if (std::filesystem::is_directory(path)) {
-        for (const auto& entry : std::filesystem::directory_iterator(path)) {
-            if (std::filesystem::is_directory(entry)) {
-                directories.push_back(entry.path());
-            }
-        }
-    }
-    std::sort(directories.begin(), directories.end());
-    return directories;
 }
 
-std::vector<std::filesystem::path> GetFileList(const std::filesystem::path& path) {
-    std::vector<std::filesystem::path> files;
+void BuildFileSystem(TFileSystem& fileSystem, const std::filesystem::path& base, const std::filesystem::path& current) {
+    fileSystem.insert({current, {base, {}}});
+    auto& files = fileSystem.at(current).second;
 
-    if (std::filesystem::is_directory(path)) {
-        for (const auto& entry : std::filesystem::directory_iterator(path)) {
-            if (TFormatPermited::Format.contains(entry.path().extension())) {
-                files.push_back(entry.path());
+    if (std::filesystem::is_directory(current)) {
+        for (const auto& entry : std::filesystem::directory_iterator(current)) {
+            if (std::filesystem::is_directory(entry)) {
+                BuildFileSystem(fileSystem, current, entry);
+                files.push_back(entry);
+            } else {
+                files.push_back(entry);
             }
         }
-    } else {
-        if (TFormatPermited::Format.contains(path.extension())) {
-            files.push_back(path);
-        }
+        std::sort(files.begin(), files.end());
     }
-    std::sort(files.begin(), files.end());
-    return files;
 }
 
 int main(int argc, char *argv[]) {
@@ -147,14 +138,14 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    auto basePath = std::string{argv[1]};
+    auto basePath = std::filesystem::path{std::string{argv[1]}};
 
-    auto directories = GetDirList(basePath);
+    TFileSystem fileSystem;
+    BuildFileSystem(fileSystem, std::filesystem::path{}, basePath);
 
-    if (directories.empty()) {
-        std::cerr << "opem music list error: " << basePath << std::endl;
-        return 1;
-    }
+    auto parent = fileSystem.at(basePath).first;
+    auto files = fileSystem.at(basePath).second;
+    std::size_t position = 0;
 
     std::string device;
     if (argc == 3) {
@@ -170,39 +161,55 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    std::size_t current = 0;
-
     auto ui = std::make_shared<NUI::TCUI>(WIN_WIDTH, WIN_HIGHT);
 
     ui->Init();
-    ui->ListDraw(directories, current);
+    ui->ListDraw(files, position);
     ui->StatusDraw("");
 
     auto ctx = std::make_shared<TContext>();
 
-    auto input = 0;
-    while ((input = getch()) != ERR) {
-        if (input == 'q') {
+    while (true) {
+        auto command = ui->GetCommand();
+        if (command == NUI::ECommands::QUIT) {
             ctx->Stop();
             break;
-        } else if (input == KEY_UP && ctx->IsEnd()) {
-            current = current == 0 ? 0 : current - 1;
-            ui->ListDraw(directories, current);
-        } else if (input == KEY_DOWN && ctx->IsEnd()) {
-            current = std::min(directories.size() - 1, current + 1);
-            ui->ListDraw(directories, current);
-        } else if (input == 'p' && ctx->IsEnd()) {
+        } else if (command == NUI::ECommands::UP && ctx->IsEnd()) {
+            position = position == 0 ? 0 : position - 1;
+            ui->ListDraw(files, position);
+        } else if (command == NUI::ECommands::DOWN && ctx->IsEnd()) {
+            position = std::min(files.size() - 1, position + 1);
+            ui->ListDraw(files, position);
+        } else if (command == NUI::ECommands::RIGHT && ctx->IsEnd()) {
+            auto newPath = files[position];
+            if (std::filesystem::is_directory(newPath)) {
+                parent = fileSystem.at(newPath).first;
+                files = fileSystem.at(newPath).second;
+                position = 0;
+                ui->ListDraw(files, position);
+            }
+        } else if (command == NUI::ECommands::LEFT && ctx->IsEnd()) {
+            auto newPath = parent;
+            if (!newPath.empty()) {
+                parent = fileSystem.at(newPath).first;
+                files = fileSystem.at(newPath).second;
+                position = 0;
+                ui->ListDraw(files, position);
+            }
+        } else if (command == NUI::ECommands::PLAY && ctx->IsEnd()) {
+            TFiles filesForPlay;
+            if (std::filesystem::is_directory(files[position])) {
+                filesForPlay = fileSystem.at(files[position]).second;
+            } else {
+                filesForPlay.push_back(files[position]);
+            }
             ctx->Start();
-
-            auto files = GetFileList(directories[current]);
-
             std::thread tWrite(Write, ctx, write, ui);
-            std::thread tRead(Read, ctx, std::move(files), ui);
-
+            std::thread tRead(Read, ctx, std::move(filesForPlay), ui);
             tWrite.detach();
             tRead.detach();
-        } else if (input == 's') {
-            ui->ListDraw(directories, current);
+        } else if (command == NUI::ECommands::STOP) {
+            ui->ListDraw(files, position);
             ctx->Stop();
         }
     }

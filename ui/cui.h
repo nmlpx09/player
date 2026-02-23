@@ -15,10 +15,11 @@ public:
     TCUI& operator=(const TCUI&) = delete;
     TCUI& operator=(TCUI&&) = delete;
 
-    void ListDraw(const std::vector<std::filesystem::path>& musicList, std::size_t currentPos) noexcept override;
+    void ListDraw(const TFiles& filesList, std::size_t currentPos) noexcept override;
     void StatusDraw(const std::string& message) noexcept override;
     void Init() noexcept override;
     void Close() noexcept override;
+    ECommands GetCommand() noexcept override;
 private:
     WINDOW* WinMusicList = nullptr;
     WINDOW* WinMain = nullptr;

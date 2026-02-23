@@ -39,7 +39,7 @@ void TCUI::Close() noexcept {
 }
 
 void TCUI::ListDraw(
-    const std::vector<std::filesystem::path>& directories,
+    const TFiles& filesList,
     std::size_t current
 ) noexcept {
     if (WinMusicList == nullptr) {
@@ -66,8 +66,8 @@ void TCUI::ListDraw(
         }
 
         std::string message;
-        if (i < directories.size()) {
-            message = directories[i].filename().string();
+        if (i < filesList.size()) {
+            message = filesList[i].filename().string();
 
             if (message.size() >= WinWidth - 2) {
                 message.resize(WinWidth - 2);
@@ -87,6 +87,30 @@ void TCUI::StatusDraw(const std::string& message) noexcept {
     wclear(WinMain);
     mvwprintw(WinMain, 0, 0, "%s", message.c_str());
     wrefresh(WinMain);
+}
+
+ECommands TCUI::GetCommand() noexcept {
+    auto input = 0;
+
+    while ((input = getch()) != ERR) {
+        if (input == 'q') {
+            return ECommands::QUIT;
+        } else if (input == KEY_UP) {
+            return ECommands::UP;
+        } else if (input == KEY_DOWN) {
+            return ECommands::DOWN;
+        } else if (input == KEY_LEFT) {
+            return ECommands::LEFT;
+        } else if (input == KEY_RIGHT) {
+            return ECommands::RIGHT;
+        } else if (input == 'p') {
+            return ECommands::PLAY;
+        } else if (input == 's') {
+            return ECommands::STOP;
+        }
+    }
+
+    return ECommands::EMPTY;
 }
 
 }

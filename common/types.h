@@ -1,9 +1,12 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <vector>
 #include <set>
 #include <string>
+#include <unordered_map>
+#include <utility>
 
 using TData = std::vector<std::uint8_t>;
 
@@ -21,3 +24,13 @@ struct TFormat {
 
     bool operator ==(const TFormat& lhs) const = default;
 };
+
+using TFiles = std::vector<std::filesystem::path>;
+
+using TFileSystem = std::unordered_map<
+    std::filesystem::path,
+    std::pair<
+        std::filesystem::path,
+        TFiles
+    >
+>;
