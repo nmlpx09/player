@@ -17,7 +17,7 @@
 #include <vector>
 
 void Write(TContextPtr ctx, NWrite::TWritePtr write, NUI::TUIPtr ui) noexcept {
-    auto popQueue = [=] () noexcept {
+    auto getPayload = [=] () noexcept {
         auto payload = ctx->GetPayload();
         ctx->ReadNotify();
 
@@ -33,7 +33,7 @@ void Write(TContextPtr ctx, NWrite::TWritePtr write, NUI::TUIPtr ui) noexcept {
             break;
         }
 
-        if (auto ec = write->Write(popQueue); ec) {
+        if (auto ec = write->Write(getPayload); ec) {
             std::string error = "write error: " + ec.message();
             ui->StatusDraw(error);
             break;
@@ -75,7 +75,7 @@ void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
         ui->StatusDraw(currentFile);
         ui->ListDraw(files, current++);
 
-        auto pushQueue = [=, &time, &format] (TData data) noexcept {
+        auto storePayload = [=, &time, &format] (TData data) noexcept {
             ctx->StorePayload(std::make_tuple(time, format, std::move(data)));
             ctx->WriteNotify();
 
@@ -89,7 +89,7 @@ void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
                 break;
             }
 
-            if (auto result = read->Read(pushQueue); !result) {
+            if (auto result = read->Read(storePayload); !result) {
                 std::string error = "read error: {} " + result.error().message();
                 ui->StatusDraw(error);
                 break;
@@ -134,17 +134,10 @@ int main(int argc, char *argv[]) {
     auto files = fileSystem.at(basePath).second;
     std::size_t position = 0;
 
-    std::string device;
-    if (argc == 3) {
-        device = std::string{argv[2]};
-    } else {
-        device = DEVICE;
-    }
-
-    NWrite::TWritePtr write = std::make_shared<NWrite::TWrite>(device);
+    NWrite::TWritePtr write = std::make_shared<NWrite::TWrite>(DEVICE);
 
     if (auto ec = write->Init(TFormat{}); ec) {
-        std::cerr << "init device error: " << device << std::endl;
+        std::cerr << "init device error: " << DEVICE << std::endl;
         return 1;
     }
 
