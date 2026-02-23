@@ -1,10 +1,12 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <vector>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 
@@ -34,3 +36,5 @@ using TFileSystem = std::unordered_map<
         TFiles
     >
 >;
+
+using TPayload = std::tuple<std::chrono::time_point<std::chrono::steady_clock>, TFormat, TData>;

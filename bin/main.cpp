@@ -4,12 +4,7 @@
 #include <common/types.h>
 #include <read/flac.h>
 #include <ui/cui.h>
-
-#ifdef ALSA
 #include <write/alsa.h>
-#else
-#include <write/pulse.h>
-#endif
 
 #include <algorithm>
 #include <chrono>
@@ -22,23 +17,20 @@
 #include <vector>
 
 void Write(TContextPtr ctx, NWrite::TWritePtr write, NUI::TUIPtr ui) noexcept {
-    auto popQueue = [=] () noexcept -> std::optional<std::pair<TFormat, TData>> {
-        auto [date, format, buffer] = ctx->Queue.front();
-        ctx->Queue.pop_front();
-        ctx->ReadCv.notify_one();
+    auto popQueue = [=] () noexcept {
+        auto payload = ctx->GetPayload();
+        ctx->ReadNotify();
 
-        std::this_thread::sleep_until(date);
+        std::this_thread::sleep_until(std::get<0>(payload));
 
-        return std::make_optional(std::make_pair(std::move(format), std::move(buffer)));
+        return payload;
     };
 
-    while (!ctx->IsEnd()) {
-        std::unique_lock<std::mutex> ulock{ctx->Mutex};
-        ctx->WriteCv.wait(ulock, [ctx] { return !ctx->Queue.empty() || ctx->IsEnd(); });
-        ulock.unlock();
-        
-        if (ctx->IsEnd()) {
-            return;
+    while (true) {
+        ctx->WriteWait();
+
+        if (ctx->IsStop()) {
+            break;
         }
 
         if (auto ec = write->Write(popQueue); ec) {
@@ -47,7 +39,6 @@ void Write(TContextPtr ctx, NWrite::TWritePtr write, NUI::TUIPtr ui) noexcept {
             break;
         }
     }
-    ctx->Stop();
 }
 
 void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
@@ -60,7 +51,7 @@ void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
             continue;
         }
 
-        if (ctx->IsEnd()) {
+        if (ctx->IsStop()) {
             break;
         }
 
@@ -69,8 +60,8 @@ void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
         TFormat format;
 
         auto pushQueue = [=, &time, &format] (TData data) noexcept {
-            ctx->Queue.emplace_back(std::make_tuple(time, format, std::move(data)));
-            ctx->WriteCv.notify_one();
+            ctx->StorePayload(std::make_tuple(time, format, std::move(data)));
+            ctx->WriteNotify();
 
             time += delta;
         };
@@ -92,12 +83,10 @@ void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
         ui->StatusDraw(currentFile);
         ui->ListDraw(files, current++);
 
-        while (!ctx->IsEnd()) {
-            std::unique_lock<std::mutex> ulock{ctx->Mutex};
-            ctx->ReadCv.wait(ulock, [ctx] { return ctx->Queue.empty() || ctx->IsEnd(); });
-            ulock.unlock();
+        while (true) {
+            ctx->ReadWait();
 
-            if (ctx->IsEnd()) {
+            if (ctx->IsStop()) {
                 break;
             }
 
@@ -112,7 +101,6 @@ void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
     }
 
     ui->StatusDraw("");
-    ctx->Stop();
 }
 
 void BuildFileSystem(TFileSystem& fileSystem, const std::filesystem::path& base, const std::filesystem::path& current) {
@@ -174,13 +162,13 @@ int main(int argc, char *argv[]) {
         if (command == NUI::ECommands::QUIT) {
             ctx->Stop();
             break;
-        } else if (command == NUI::ECommands::UP && ctx->IsEnd()) {
+        } else if (command == NUI::ECommands::UP && ctx->IsStop()) {
             position = position == 0 ? 0 : position - 1;
             ui->ListDraw(files, position);
-        } else if (command == NUI::ECommands::DOWN && ctx->IsEnd()) {
+        } else if (command == NUI::ECommands::DOWN && ctx->IsStop()) {
             position = std::min(files.size() - 1, position + 1);
             ui->ListDraw(files, position);
-        } else if (command == NUI::ECommands::RIGHT && ctx->IsEnd()) {
+        } else if (command == NUI::ECommands::RIGHT && ctx->IsStop()) {
             auto newPath = files[position];
             if (std::filesystem::is_directory(newPath)) {
                 parent = fileSystem.at(newPath).first;
@@ -188,7 +176,7 @@ int main(int argc, char *argv[]) {
                 position = 0;
                 ui->ListDraw(files, position);
             }
-        } else if (command == NUI::ECommands::LEFT && ctx->IsEnd()) {
+        } else if (command == NUI::ECommands::LEFT && ctx->IsStop()) {
             auto newPath = parent;
             if (!newPath.empty()) {
                 parent = fileSystem.at(newPath).first;
@@ -196,7 +184,7 @@ int main(int argc, char *argv[]) {
                 position = 0;
                 ui->ListDraw(files, position);
             }
-        } else if (command == NUI::ECommands::PLAY && ctx->IsEnd()) {
+        } else if (command == NUI::ECommands::PLAY && ctx->IsStop()) {
             TFiles filesForPlay;
             if (std::filesystem::is_directory(files[position])) {
                 filesForPlay = fileSystem.at(files[position]).second;
@@ -204,10 +192,10 @@ int main(int argc, char *argv[]) {
                 filesForPlay.push_back(files[position]);
             }
             ctx->Start();
-            std::thread tWrite(Write, ctx, write, ui);
             std::thread tRead(Read, ctx, std::move(filesForPlay), ui);
-            tWrite.detach();
+            std::thread tWrite(Write, ctx, write, ui);
             tRead.detach();
+            tWrite.detach();
         } else if (command == NUI::ECommands::STOP) {
             ui->ListDraw(files, position);
             ctx->Stop();
@@ -215,6 +203,5 @@ int main(int argc, char *argv[]) {
     }
 
     ui->Close();
-
     return 0;
 }

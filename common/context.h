@@ -2,26 +2,35 @@
 
 #include "types.h"
 
-#include <atomic>
-#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <list>
 #include <memory>
 #include <mutex>
+#include <utility>
 
 struct TContext {
 public:
+    bool IsStop();
+    bool IsQuit();
+    bool IsQueueEmpty();
+
     void Stop();
     void Start();
-    bool IsEnd();
-public:
-    std::list<std::tuple<std::chrono::time_point<std::chrono::steady_clock>, TFormat, std::vector<std::uint8_t>>> Queue;
+
+    void StorePayload(TPayload&& payload);
+    TPayload GetPayload();
+
+    void ReadWait();
+    void WriteWait();
+    void ReadNotify();
+    void WriteNotify();
+private:
     std::mutex Mutex;
     std::condition_variable WriteCv;
     std::condition_variable ReadCv;
-private:
-    std::atomic_bool End = true;
+    std::list<TPayload> Queue;
+    bool StopFlag = true;
 };
 
 using TContextPtr = std::shared_ptr<TContext>;

@@ -3,7 +3,7 @@
 audio flac player for smallest system
 
 1. ui - ncurses
-2. audio output - alsa or pulseaudio
+2. audio output - alsa
 3. flac - 192000, 96000, 48000, 44100 Hz, 16 or 24 bit stereo format
 
 # requirement
@@ -13,7 +13,6 @@ audio flac player for smallest system
 3. libasound2-dev
 4. libflac++-dev
 5. libncurses5-dev
-6. libpulse0
 
 # build
 
@@ -25,8 +24,10 @@ make install
 
 # control
 
-1. KEY_UP - up in  music list
-2. KEY_DOWN - down music list
-3. q - quit
-4. p - play
-5. s - stop (with small delay)
+1. up - up in  music list
+2. down - down music list
+3. left - push dir
+4. right - pop dir
+5. q - quit
+6. p - play
+7. s - stop

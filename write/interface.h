@@ -9,7 +9,7 @@
 
 namespace NWrite {
 
-using TCallback = std::function<std::optional<std::pair<TFormat, TData>>()>;
+using TCallback = std::function<TPayload()>;
 
 struct TInterface {
 public:

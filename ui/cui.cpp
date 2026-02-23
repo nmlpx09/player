@@ -29,10 +29,12 @@ void TCUI::Init() noexcept {
 void TCUI::Close() noexcept {
     if (WinMusicList != nullptr) {
         delwin(WinMusicList);
+        WinMusicList = nullptr;
     }
 
     if (WinMain != nullptr) {
         delwin(WinMain);
+        WinMain = nullptr;
     }
 
     endwin();
