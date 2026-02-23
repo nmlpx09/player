@@ -46,25 +46,17 @@ void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
 
     std::size_t current = 0;
     for (const auto& file: files) {
+        if (ctx->IsStop()) {
+            break;
+        }
 
         if (std::filesystem::is_directory(file) || !TFormatPermited::Format.contains(file.extension())) {
             continue;
         }
 
-        if (ctx->IsStop()) {
-            break;
-        }
-
         auto time = std::chrono::steady_clock::now() + delta;
 
         TFormat format;
-
-        auto pushQueue = [=, &time, &format] (TData data) noexcept {
-            ctx->StorePayload(std::make_tuple(time, format, std::move(data)));
-            ctx->WriteNotify();
-
-            time += delta;
-        };
 
         NRead::TReadPtr read = std::make_unique<NRead::TFlac>();
         if (auto result = read->Init(file.string()); !result) {
@@ -82,6 +74,13 @@ void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
 
         ui->StatusDraw(currentFile);
         ui->ListDraw(files, current++);
+
+        auto pushQueue = [=, &time, &format] (TData data) noexcept {
+            ctx->StorePayload(std::make_tuple(time, format, std::move(data)));
+            ctx->WriteNotify();
+
+            time += delta;
+        };
 
         while (true) {
             ctx->ReadWait();
