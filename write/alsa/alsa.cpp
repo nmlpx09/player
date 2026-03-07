@@ -1,5 +1,6 @@
 #include "alsa.h"
-#include "errors.h"
+
+#include <write/errors.h>
 
 namespace NWrite {
 

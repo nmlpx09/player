@@ -1,8 +1,7 @@
 #pragma once
 
-#include "interface.h"
-
 #include <common/types.h>
+#include <read/interface.h>
 
 #include "FLAC++/decoder.h"
 

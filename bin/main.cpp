@@ -2,9 +2,9 @@
 
 #include <common/context.h>
 #include <common/types.h>
-#include <read/flac.h>
-#include <ui/cui.h>
-#include <write/alsa.h>
+#include <read/flac/flac.h>
+#include <ui/web/web.h>
+#include <write/alsa/alsa.h>
 
 #include <algorithm>
 #include <chrono>
@@ -134,63 +134,70 @@ int main(int argc, char *argv[]) {
     NWrite::TWritePtr write = std::make_shared<NWrite::TWrite>(DEVICE);
 
     if (auto ec = write->Init(TFormat{}); ec) {
-        std::cerr << "init device error: " << DEVICE << std::endl;
+        std::cerr << "init device error: " << ec.message() << std::endl;
         return 1;
     }
 
-    auto ui = std::make_shared<NUI::TCUI>(WIN_WIDTH, WIN_HIGHT);
+    auto ui = std::make_shared<NUI::TWeb>(WIN_WIDTH, WIN_HIGHT, PORT);
 
-    ui->Init();
+    if (auto ec = ui->Init(); ec) {
+        std::cerr << "init ui error: " << ec.message() << std::endl;
+        return 1;
+    }
+
     ui->ListDraw(files, position);
     ui->StatusClean();
 
     auto ctx = std::make_shared<TContext>();
 
     while (true) {
-        auto command = ui->GetCommand();
-        if (command == NUI::ECommands::QUIT) {
-            ctx->Stop();
-            break;
-        } else if (command == NUI::ECommands::UP && ctx->IsStop()) {
-            position = position == 0 ? 0 : position - 1;
-            ui->ListDraw(files, position);
-        } else if (command == NUI::ECommands::DOWN && ctx->IsStop()) {
-            position = std::min(files.size() - 1, position + 1);
-            ui->ListDraw(files, position);
-        } else if (command == NUI::ECommands::RIGHT && ctx->IsStop()) {
-            auto newPath = files[position];
-            if (std::filesystem::is_directory(newPath)) {
-                parent = fileSystem.at(newPath).first;
-                files = fileSystem.at(newPath).second;
-                position = 0;
+        if (auto result = ui->GetCommand(); result) {
+            auto command = result.value();
+            if (command == NUI::ECommands::QUIT) {
+                ctx->Stop();
+                break;
+            } else if (command == NUI::ECommands::UP && ctx->IsStop()) {
+                position = position == 0 ? 0 : position - 1;
                 ui->ListDraw(files, position);
-            }
-        } else if (command == NUI::ECommands::LEFT && ctx->IsStop()) {
-            auto newPath = parent;
-            if (!newPath.empty()) {
-                parent = fileSystem.at(newPath).first;
-                files = fileSystem.at(newPath).second;
-                position = 0;
+            } else if (command == NUI::ECommands::DOWN && ctx->IsStop()) {
+                position = std::min(files.size() - 1, position + 1);
                 ui->ListDraw(files, position);
+            } else if (command == NUI::ECommands::ENTER && ctx->IsStop()) {
+                auto newPath = files[position];
+                if (std::filesystem::is_directory(newPath)) {
+                    parent = fileSystem.at(newPath).first;
+                    files = fileSystem.at(newPath).second;
+                    position = 0;
+                    ui->ListDraw(files, position);
+                }
+            } else if (command == NUI::ECommands::EXIT && ctx->IsStop()) {
+                auto newPath = parent;
+                if (!newPath.empty()) {
+                    parent = fileSystem.at(newPath).first;
+                    files = fileSystem.at(newPath).second;
+                    position = 0;
+                    ui->ListDraw(files, position);
+                }
+            } else if (command == NUI::ECommands::PLAY && ctx->IsStop()) {
+                TFiles filesForPlay;
+                if (std::filesystem::is_directory(files[position])) {
+                    filesForPlay = fileSystem.at(files[position]).second;
+                } else {
+                    filesForPlay.push_back(files[position]);
+                }
+                ctx->Start();
+                std::thread tRead(Read, ctx, std::move(filesForPlay), ui);
+                std::thread tWrite(Write, ctx, write, ui);
+                tRead.detach();
+                tWrite.detach();
+            } else if (command == NUI::ECommands::STOP) {
+                ui->ListDraw(files, position);
+                ctx->Stop();
             }
-        } else if (command == NUI::ECommands::PLAY && ctx->IsStop()) {
-            TFiles filesForPlay;
-            if (std::filesystem::is_directory(files[position])) {
-                filesForPlay = fileSystem.at(files[position]).second;
-            } else {
-                filesForPlay.push_back(files[position]);
-            }
-            ctx->Start();
-            std::thread tRead(Read, ctx, std::move(filesForPlay), ui);
-            std::thread tWrite(Write, ctx, write, ui);
-            tRead.detach();
-            tWrite.detach();
-        } else if (command == NUI::ECommands::STOP) {
-            ui->ListDraw(files, position);
-            ctx->Stop();
+        } else {
+            std::cerr << "read error command : " << result.error().message() << std::endl;
         }
     }
 
-    ui->Close();
     return 0;
 }

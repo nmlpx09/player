@@ -1,5 +1,6 @@
-#include "errors.h"
 #include "flac.h"
+
+#include <read/errors.h>
 
 namespace NRead {
 
