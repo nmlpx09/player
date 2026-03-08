@@ -1,6 +1,6 @@
 # about
 
-audio flac player for smallest system
+web audio flac player for smallest system
 
 1. ui - web
 2. audio output - alsa

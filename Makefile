@@ -5,7 +5,7 @@ DEFINES =
 OBJ = bin/main.o read/flac/flac.o ui/web/web.o common/context.o write/alsa/alsa.o
 LDFLAGS= -lFLAC++ -lncurses -lasound
 
-RUN = bin/play
+RUN = bin/player
 
 alsa: $(OBJ)
 	$(CC) $^ -o $(RUN) $(LDFLAGS)

@@ -17,7 +17,7 @@ static const std::string INDEX = R"(
             }
             .table {
                 width: 70%;
-                border: 2px solid;
+                border: 1px solid;
                 margin: 8px 2px;
             }
             .button {
@@ -35,8 +35,8 @@ static const std::string INDEX = R"(
                 cursor: pointer;
             }
             .textarea {
-                width: 65%;
-                border: 2px solid;
+                width: 70%;
+                border: 1px solid;
                 resize: none;
                 outline: none;
                 margin: 8px 2px;
