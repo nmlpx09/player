@@ -3,8 +3,11 @@
 #include <common/context.h>
 #include <common/types.h>
 #include <read/flac/flac.h>
-#include <ui/web/web.h>
+#ifdef ALSA
 #include <write/alsa/alsa.h>
+#else
+#include <write/pulse/pulse.h>
+#endif
 
 #include <algorithm>
 #include <chrono>
@@ -13,7 +16,8 @@
 #include <memory>
 #include <thread>
 
-void Write(TContextPtr ctx, NWrite::TWritePtr write, NUI::TUIPtr ui) noexcept {
+
+void Write(TContextPtr ctx, NWrite::TWritePtr write) noexcept {
     auto getPayload = [=] () noexcept {
         auto payload = ctx->GetPayload();
         ctx->ReadNotify();
@@ -31,23 +35,21 @@ void Write(TContextPtr ctx, NWrite::TWritePtr write, NUI::TUIPtr ui) noexcept {
         }
 
         if (auto ec = write->Write(getPayload); ec) {
-            std::string error = "write error: " + ec.message();
-            ui->StatusDraw(error);
+            std::cerr << "write error: " + ec.message() << std::endl;
             break;
         }
     }
 }
 
-void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
+void Read(TContextPtr ctx, TFiles files) noexcept {
     const auto delta = std::chrono::milliseconds(500);
 
-    std::size_t current = 0;
     for (const auto& file: files) {
         if (ctx->IsStop()) {
             break;
         }
 
-        if (std::filesystem::is_directory(file) || !TFormatPermited::Format.contains(file.extension())) {
+        if (!TFormatPermited::Format.contains(file.extension())) {
             continue;
         }
 
@@ -57,20 +59,18 @@ void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
 
         NRead::TReadPtr read = std::make_unique<NRead::TFlac>();
         if (auto result = read->Init(file.string()); !result) {
-            std::string error = "read init error: {} " + result.error().message();
-            ui->StatusDraw(error);
+            std::cerr << "read init error: {} " + result.error().message();
             return;
         } else {
             format = result.value();
         }
 
-        std::string currentFile = file.filename().string() + "; " +
+        std::string status = file.filename().string() + "; format: " +
             std::to_string(format.SampleRate) + "hz " +
             std::to_string(format.BitsPerSample) + "bps " +
-            std::to_string(format.NumChannels) + "ch";
+            std::to_string(format.NumChannels) + "ch\n";
 
-        ui->StatusDraw(currentFile);
-        ui->ListDraw(files, current++);
+        std::cout << status;
 
         auto storePayload = [=, &time, &format] (TData data) noexcept {
             ctx->StorePayload(std::make_tuple(time, format, std::move(data)));
@@ -87,8 +87,7 @@ void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
             }
 
             if (auto result = read->Read(storePayload); !result) {
-                std::string error = "read error: {} " + result.error().message();
-                ui->StatusDraw(error);
+                std::cerr <<"read error: {} " + result.error().message();
                 break;
             } else if (!result.value()) {
                 break;
@@ -96,24 +95,27 @@ void Read(TContextPtr ctx, TFiles files, NUI::TUIPtr ui) noexcept {
         }
     }
 
-    ui->StatusClean();
+    ctx->Stop();
 }
 
-void BuildFileSystem(TFileSystem& fileSystem, const std::filesystem::path& base, const std::filesystem::path& current) {
-    fileSystem.insert({current, {base, {}}});
-    auto& files = fileSystem.at(current).second;
+TFiles GetFiles(const TFiles::value_type& path) {
+    TFiles files;
 
-    if (std::filesystem::is_directory(current)) {
-        for (const auto& entry : std::filesystem::directory_iterator(current)) {
-            if (std::filesystem::is_directory(entry)) {
-                BuildFileSystem(fileSystem, current, entry);
-                files.push_back(entry);
-            } else {
-                files.push_back(entry);
+    if (std::filesystem::is_directory(path)) {
+        for (const auto& entry : std::filesystem::directory_iterator(path)) {
+            if (TFormatPermited::Format.contains(entry.path().extension())) {
+                files.push_back(entry.path());
             }
         }
-        std::sort(files.begin(), files.end());
+    } else {
+        if (TFormatPermited::Format.contains(path.extension())) {
+            files.push_back(path);
+        }
     }
+
+    std::sort(files.begin(), files.end());
+
+    return files;
 }
 
 int main(int argc, char *argv[]) {
@@ -122,82 +124,35 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    auto basePath = std::filesystem::path{std::string{argv[1]}};
+    auto dir = std::string{argv[1]};
+    auto files = GetFiles(dir);
 
-    TFileSystem fileSystem;
-    BuildFileSystem(fileSystem, std::filesystem::path{}, basePath);
-
-    auto parent = fileSystem.at(basePath).first;
-    auto files = fileSystem.at(basePath).second;
-    std::size_t position = 0;
-
-    NWrite::TWritePtr write = std::make_shared<NWrite::TWrite>(DEVICE);
-
-    if (auto ec = write->Init(TFormat{}); ec) {
-        std::cerr << "init device error: " << ec.message() << std::endl;
+    if (files.empty()) {
+        std::cerr << "empty directory: " << dir << std::endl;
         return 1;
     }
 
-    auto ui = std::make_shared<NUI::TWeb>(WIN_WIDTH, WIN_HIGHT, PORT);
-
-    if (auto ec = ui->Init(); ec) {
-        std::cerr << "init ui error: " << ec.message() << std::endl;
-        return 1;
+    std::string device;
+    if (argc == 3) {
+        device = std::string{argv[2]};
+    } else {
+        device = DEVICE;
     }
-
-    ui->ListDraw(files, position);
-    ui->StatusClean();
 
     auto ctx = std::make_shared<TContext>();
 
-    while (true) {
-        if (auto result = ui->GetCommand(); result) {
-            auto command = result.value();
-            if (command == NUI::ECommands::QUIT) {
-                ctx->Stop();
-                break;
-            } else if (command == NUI::ECommands::UP && ctx->IsStop()) {
-                position = position == 0 ? 0 : position - 1;
-                ui->ListDraw(files, position);
-            } else if (command == NUI::ECommands::DOWN && ctx->IsStop()) {
-                position = std::min(files.size() - 1, position + 1);
-                ui->ListDraw(files, position);
-            } else if (command == NUI::ECommands::ENTER && ctx->IsStop()) {
-                auto newPath = files[position];
-                if (std::filesystem::is_directory(newPath)) {
-                    parent = fileSystem.at(newPath).first;
-                    files = fileSystem.at(newPath).second;
-                    position = 0;
-                    ui->ListDraw(files, position);
-                }
-            } else if (command == NUI::ECommands::EXIT && ctx->IsStop()) {
-                auto newPath = parent;
-                if (!newPath.empty()) {
-                    parent = fileSystem.at(newPath).first;
-                    files = fileSystem.at(newPath).second;
-                    position = 0;
-                    ui->ListDraw(files, position);
-                }
-            } else if (command == NUI::ECommands::PLAY && ctx->IsStop()) {
-                TFiles filesForPlay;
-                if (std::filesystem::is_directory(files[position])) {
-                    filesForPlay = fileSystem.at(files[position]).second;
-                } else {
-                    filesForPlay.push_back(files[position]);
-                }
-                ctx->Start();
-                std::thread tRead(Read, ctx, std::move(filesForPlay), ui);
-                std::thread tWrite(Write, ctx, write, ui);
-                tRead.detach();
-                tWrite.detach();
-            } else if (command == NUI::ECommands::STOP) {
-                ui->ListDraw(files, position);
-                ctx->Stop();
-            }
-        } else {
-            std::cerr << "read error command : " << result.error().message() << std::endl;
-        }
+    NWrite::TWritePtr write = std::make_unique<NWrite::TWrite>(device);
+
+    if (auto ec = write->Init(TFormat{}); ec) {
+        std::cerr << "init device error: " << device << std::endl;
+        return 1;
     }
+
+    std::thread tWrite(Write, ctx, std::move(write));
+    std::thread tRead(Read, ctx, std::move(files));
+
+    tRead.join();
+    tWrite.join();
 
     return 0;
 }

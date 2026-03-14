@@ -11,8 +11,6 @@
 
 namespace NRead {
 
-namespace {
-
 struct TFlacDecoder: FLAC::Decoder::File {
 public:
     FLAC__StreamDecoderWriteStatus write_callback(const FLAC__Frame* frame, const FLAC__int32* const buffer[]) override;
@@ -28,8 +26,6 @@ public:
 
     std::deque<TData::value_type> Buffer;
 };
-
-}
 
 struct TFlac: TInterface {
 public:

@@ -10,11 +10,9 @@
 struct TContext {
 public:
     bool IsStop();
-    bool IsQuit();
     bool IsQueueEmpty();
 
     void Stop();
-    void Start();
 
     void StorePayload(TPayload&& payload);
     TPayload GetPayload();
@@ -28,7 +26,7 @@ private:
     std::condition_variable WriteCv;
     std::condition_variable ReadCv;
     std::list<TPayload> Queue;
-    bool StopFlag = true;
+    bool StopFlag = false;
 };
 
 using TContextPtr = std::shared_ptr<TContext>;

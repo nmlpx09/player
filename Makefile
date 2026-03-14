@@ -1,14 +1,23 @@
-CC = clang++-20
+CC = g++
 CCFLAGS = -O3 -ffast-math -std=c++23 -pedantic -Wall -W -Werror -Wextra -c -I.
 DEFINES =
 
-OBJ = bin/main.o read/flac/flac.o ui/web/web.o common/context.o write/alsa/alsa.o
-LDFLAGS= -lFLAC++ -lncurses -lasound
+OBJ = bin/main.o common/context.o read/flac/flac.o
 
-RUN = bin/player
+OBJ_ALSA = $(OBJ) write/alsa/alsa.o
+LDFLAGS_ALSA = -lasound -lFLAC++
 
-alsa: $(OBJ)
-	$(CC) $^ -o $(RUN) $(LDFLAGS)
+OBJ_PULSE =  $(OBJ) write/pulse/pulse.o
+LDFLAGS_PULSE = -lpulse-simple -lFLAC++
+
+RUN = bin/play
+
+alsa: DEFINES += -DALSA
+alsa: $(OBJ_ALSA)
+	$(CC) $^ -o $(RUN) $(LDFLAGS_ALSA)
+
+pulse: $(OBJ_PULSE)
+	$(CC) $^ -o $(RUN) $(LDFLAGS_PULSE)
 
 %.o: %.cpp
 	$(CC) $(DEFINES) $(CCFLAGS) $< -o $@
@@ -17,5 +26,8 @@ install:
 	strip $(RUN)
 	cp $(RUN) /usr/bin/
 
+install_termux:
+	cp $(RUN) /data/data/com.termux/files/usr/bin/
+
 clean:
-	rm -f $(OBJ) $(RUN)
+	rm -f $(OBJ_ALSA) $(OBJ_PULSE) $(RUN)

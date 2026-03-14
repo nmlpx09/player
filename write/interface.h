@@ -18,6 +18,6 @@ public:
     virtual std::error_code Init(TFormat) noexcept = 0;
 };
 
-using TWritePtr = std::shared_ptr<TInterface>;
+using TWritePtr = std::unique_ptr<TInterface>;
 
 }

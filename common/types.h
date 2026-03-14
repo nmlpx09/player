@@ -7,7 +7,6 @@
 #include <set>
 #include <string>
 #include <tuple>
-#include <unordered_map>
 #include <utility>
 
 using TData = std::vector<std::uint8_t>;
@@ -28,13 +27,5 @@ struct TFormat {
 };
 
 using TFiles = std::vector<std::filesystem::path>;
-
-using TFileSystem = std::unordered_map<
-    std::filesystem::path,
-    std::pair<
-        std::filesystem::path,
-        TFiles
-    >
->;
 
 using TPayload = std::tuple<std::chrono::time_point<std::chrono::steady_clock>, TFormat, TData>;

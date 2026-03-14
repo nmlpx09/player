@@ -34,12 +34,6 @@ void TContext::Stop() {
     WriteCv.notify_one();
 }
 
-void TContext::Start() {
-    std::unique_lock<std::mutex> ulock{Mutex};
-    Queue.clear();
-    StopFlag = false;
-}
-
 void TContext::StorePayload(TPayload&& payload) {
     std::unique_lock<std::mutex> ulock{Mutex};
     Queue.emplace_back(std::move(payload));
