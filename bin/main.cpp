@@ -59,7 +59,7 @@ void Read(TContextPtr ctx, TFiles files) noexcept {
 
         NRead::TReadPtr read = std::make_unique<NRead::TFlac>();
         if (auto result = read->Init(file.string()); !result) {
-            std::cerr << "read init error: {} " + result.error().message();
+            std::cerr << "read init error: {} " + result.error().message() << std::endl;
             return;
         } else {
             format = result.value();
@@ -87,7 +87,7 @@ void Read(TContextPtr ctx, TFiles files) noexcept {
             }
 
             if (auto result = read->Read(storePayload); !result) {
-                std::cerr <<"read error: {} " + result.error().message();
+                std::cerr <<"read error: {} " + result.error().message() << std::endl;
                 break;
             } else if (!result.value()) {
                 break;
