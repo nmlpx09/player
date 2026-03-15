@@ -1,6 +1,6 @@
 # about
 
-simple console audio flac player for smallest system
+simple console audio flac player
 
 1. audio output - alsa or pulse
 2. flac - 192000, 96000, 48000, 44100 Hz, 16 or 24 bit stereo format
