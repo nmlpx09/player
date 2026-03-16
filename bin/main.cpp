@@ -39,6 +39,8 @@ void Write(TContextPtr ctx, NWrite::TWritePtr write) noexcept {
             break;
         }
     }
+
+    ctx->Stop();
 }
 
 void Read(TContextPtr ctx, TFiles files) noexcept {

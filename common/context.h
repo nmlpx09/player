@@ -2,6 +2,7 @@
 
 #include "types.h"
 
+#include <atomic>
 #include <condition_variable>
 #include <list>
 #include <memory>
@@ -10,8 +11,6 @@
 struct TContext {
 public:
     bool IsStop();
-    bool IsQueueEmpty();
-
     void Stop();
 
     void StorePayload(TPayload&& payload);
@@ -22,11 +21,13 @@ public:
     void ReadNotify();
     void WriteNotify();
 private:
+    bool IsQueueEmpty();
+private:
     std::mutex Mutex;
     std::condition_variable WriteCv;
     std::condition_variable ReadCv;
     std::list<TPayload> Queue;
-    bool StopFlag = false;
+    std::atomic_bool StopFlag = false;
 };
 
 using TContextPtr = std::shared_ptr<TContext>;

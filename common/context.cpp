@@ -1,9 +1,5 @@
 #include "context.h"
 
-bool TContext::IsStop() {
-    return StopFlag;
-}
-
 bool TContext::IsQueueEmpty() {
     return Queue.empty();
 }
@@ -27,11 +23,15 @@ void TContext::WriteNotify() {
 }
 
 void TContext::Stop() {
-    std::unique_lock<std::mutex> ulock{Mutex};
-    StopFlag = true;
-    Queue.clear();
-    ReadCv.notify_one();
-    WriteCv.notify_one();
+    if (!StopFlag.exchange(true)) {
+        Queue.clear();
+        ReadCv.notify_one();
+        WriteCv.notify_one();
+    }
+}
+
+bool TContext::IsStop() {
+    return StopFlag.load();
 }
 
 void TContext::StorePayload(TPayload&& payload) {
