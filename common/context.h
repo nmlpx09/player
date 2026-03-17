@@ -23,11 +23,11 @@ public:
 private:
     bool IsQueueEmpty();
 private:
-    std::mutex Mutex;
-    std::condition_variable WriteCv;
-    std::condition_variable ReadCv;
+    std::recursive_mutex Mutex;
+    std::condition_variable_any WriteCv;
+    std::condition_variable_any ReadCv;
     std::list<TPayload> Queue;
-    std::atomic_bool StopFlag = false;
+    bool StopFlag = false;
 };
 
 using TContextPtr = std::shared_ptr<TContext>;

@@ -5,12 +5,12 @@ bool TContext::IsQueueEmpty() {
 }
 
 void TContext::ReadWait() {
-    std::unique_lock<std::mutex> ulock{Mutex};
+    std::unique_lock<std::recursive_mutex> ulock{Mutex};
     ReadCv.wait(ulock, [this] { return IsQueueEmpty() || IsStop(); });
 }
 
 void TContext::WriteWait() {
-    std::unique_lock<std::mutex> ulock{Mutex};
+    std::unique_lock<std::recursive_mutex> ulock{Mutex};
     WriteCv.wait(ulock, [this] { return !IsQueueEmpty() || IsStop(); });
 }
 
@@ -23,7 +23,9 @@ void TContext::WriteNotify() {
 }
 
 void TContext::Stop() {
-    if (!StopFlag.exchange(true)) {
+    std::unique_lock<std::recursive_mutex> ulock{Mutex};
+    if (!StopFlag) {
+        StopFlag = true;
         Queue.clear();
         ReadCv.notify_one();
         WriteCv.notify_one();
@@ -31,16 +33,17 @@ void TContext::Stop() {
 }
 
 bool TContext::IsStop() {
-    return StopFlag.load();
+    std::unique_lock<std::recursive_mutex> ulock{Mutex};
+    return StopFlag;
 }
 
 void TContext::StorePayload(TPayload&& payload) {
-    std::unique_lock<std::mutex> ulock{Mutex};
+    std::unique_lock<std::recursive_mutex> ulock{Mutex};
     Queue.emplace_back(std::move(payload));
 }
 
 TPayload TContext::GetPayload() {
-    std::unique_lock<std::mutex> ulock{Mutex};
+    std::unique_lock<std::recursive_mutex> ulock{Mutex};
     auto payload = Queue.front();
     Queue.pop_front();
     return payload;
