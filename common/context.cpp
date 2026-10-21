@@ -26,7 +26,6 @@ void TContext::Stop() {
     std::unique_lock<std::recursive_mutex> ulock{Mutex};
     if (!StopFlag) {
         StopFlag = true;
-        Queue.clear();
         ReadCv.notify_one();
         WriteCv.notify_one();
     }

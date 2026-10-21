@@ -72,11 +72,16 @@ std::expected<TFormat, std::error_code> TFlac::Init(std::string fileName) noexce
 std::expected<bool, std::error_code> TFlac::Read(const TCallback& callback) noexcept {
     Decoder.Callback = callback;
 
+    if (!Decoder.process_single()) {
+        if (Decoder.get_state() != FLAC__STREAM_DECODER_END_OF_STREAM) {
+            return std::unexpected(EErrorCode::Decode);
+        }
+    }
+
     if (Decoder.get_state() == FLAC__STREAM_DECODER_END_OF_STREAM) {
         return false;
     }
 
-    Decoder.process_single();
 
     return true;
 }

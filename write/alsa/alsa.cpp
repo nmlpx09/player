@@ -14,6 +14,11 @@ TWrite::~TWrite() {
 }
 
 std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
+    if (SoundDevice != nullptr) {
+        snd_pcm_close(SoundDevice);
+        SoundDevice = nullptr;
+    }
+
     if (auto err = snd_pcm_open(&SoundDevice, Device.c_str(), SND_PCM_STREAM_PLAYBACK, 0); err < 0) {
         return make_error_code(EErrorCode::DeviceInit);
     }

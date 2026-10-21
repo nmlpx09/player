@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <format>
 #include <filesystem>
 #include <iostream>
 #include <memory>
@@ -61,18 +62,15 @@ void Read(TContextPtr ctx, TFiles files) noexcept {
 
         NRead::TReadPtr read = std::make_unique<NRead::TFlac>();
         if (auto result = read->Init(file.string()); !result) {
-            std::cerr << "read init error: {} " + result.error().message() << std::endl;
+            std::cerr << std::format("read init error: {}", result.error().message()) << std::endl;
             return;
         } else {
             format = result.value();
         }
 
-        std::string status = file.filename().string() + "; format: " +
-            std::to_string(format.SampleRate) + "hz " +
-            std::to_string(format.BitsPerSample) + "bps " +
-            std::to_string(format.NumChannels) + "ch\n";
 
-        std::cout << status;
+        std::cout << std::format("{}; {}hz {}bps {}ch\n",
+            file.filename().string(), format.SampleRate, format.BitsPerSample, format.NumChannels);
 
         auto storePayload = [=, &time, &format] (TData data) noexcept {
             ctx->StorePayload(std::make_tuple(time, format, std::move(data)));
@@ -89,7 +87,7 @@ void Read(TContextPtr ctx, TFiles files) noexcept {
             }
 
             if (auto result = read->Read(storePayload); !result) {
-                std::cerr <<"read error: {} " + result.error().message() << std::endl;
+                std::cerr << std::format("read error: {}", result.error().message()) << std::endl;
                 break;
             } else if (!result.value()) {
                 break;

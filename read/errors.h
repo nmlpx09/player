@@ -7,7 +7,8 @@ namespace NRead {
 enum EErrorCode {
     Ok,
     FileOpen,
-    FileFormat
+    FileFormat,
+    Decode
 };
 
 }
@@ -34,6 +35,8 @@ public:
                 return "file open error";
             case FileFormat:
                 return "file format error";
+            case Decode:
+                return "decode error";
         }
 
         return "unknown error code: " + std::to_string(value);
