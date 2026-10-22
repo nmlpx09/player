@@ -29,10 +29,10 @@ public:
 
 struct TFlac: TInterface {
 public:
-    TFlac();
+    TFlac() = default;
     TFlac(const TFlac&) = delete;
     TFlac(TFlac&&) noexcept = delete;
-    ~TFlac();
+    ~TFlac() = default;
     TFlac& operator=(const TFlac&) = delete;
     TFlac& operator=(TFlac&&) = delete;
 

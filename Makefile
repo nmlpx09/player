@@ -1,5 +1,5 @@
 CC = g++
-CCFLAGS = -O3 -ffast-math -std=c++23 -pedantic -Wall -W -Werror -Wextra -c -I.
+CCFLAGS = -O3 --std=c++23 -pedantic -Wall -W -Werror -Wextra -c -I.
 DEFINES =
 
 OBJ = bin/main.o common/context.o read/flac/flac.o

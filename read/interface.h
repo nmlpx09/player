@@ -17,7 +17,7 @@ struct TInterface {
 public:
     virtual std::expected<TFormat, std::error_code> Init(std::string) noexcept = 0;
     virtual std::expected<bool, std::error_code> Read(const TCallback& callback) noexcept = 0;
-    virtual ~TInterface() {};
+    virtual ~TInterface() = default;
 };
 
 using TReadPtr = std::unique_ptr<TInterface>;

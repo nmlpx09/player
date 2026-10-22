@@ -20,22 +20,22 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
     }
 
     if (auto err = snd_pcm_open(&SoundDevice, Device.c_str(), SND_PCM_STREAM_PLAYBACK, 0); err < 0) {
-        return make_error_code(EErrorCode::DeviceInit);
+        return EErrorCode::DeviceInit;
     }
 
     snd_pcm_hw_params_t* hwParams;
     snd_pcm_hw_params_alloca(&hwParams);
  
     if (auto err = snd_pcm_hw_params_any(SoundDevice, hwParams); err < 0) {
-        return make_error_code(EErrorCode::DeviceInit);
+        return EErrorCode::DeviceInit;
     }
 
     if (auto err = snd_pcm_hw_params_set_rate_resample(SoundDevice, hwParams, 1); err < 0) {
-        return make_error_code(EErrorCode::DeviceInit);
+        return EErrorCode::DeviceInit;
     }
 
     if (auto err = snd_pcm_hw_params_set_access(SoundDevice, hwParams, SND_PCM_ACCESS_RW_INTERLEAVED); err < 0) {
-        return make_error_code(EErrorCode::DeviceInit);
+        return EErrorCode::DeviceInit;
     }
 
     if (!TFormatPermited::NumChannels.contains(sampleFormat.NumChannels)) {
@@ -43,7 +43,7 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
     }
 
     if (auto err = snd_pcm_hw_params_set_channels(SoundDevice, hwParams, sampleFormat.NumChannels); err < 0) {
-        return make_error_code(EErrorCode::DeviceInit);
+        return EErrorCode::DeviceInit;
     }
 
     if (!TFormatPermited::BitsPerSample.contains(sampleFormat.BitsPerSample)) {
@@ -61,11 +61,11 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
         format = SND_PCM_FORMAT_S32_LE;
         FrameSize = 4 * sampleFormat.NumChannels;
     } else {
-        return make_error_code(EErrorCode::DeviceInit);
+        return EErrorCode::DeviceInit;
     }
 
     if (auto err = snd_pcm_hw_params_set_format(SoundDevice, hwParams, format); err < 0) {
-        return make_error_code(EErrorCode::DeviceInit);
+        return EErrorCode::DeviceInit;
     }
 
     if (!TFormatPermited::SampleRate.contains(sampleFormat.SampleRate)) {
@@ -73,15 +73,15 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
     }
 
     if (auto err = snd_pcm_hw_params_set_rate_near(SoundDevice, hwParams, &sampleFormat.SampleRate, 0); err < 0) {
-        return make_error_code(EErrorCode::DeviceInit);
+        return EErrorCode::DeviceInit;
     }
 
     if (auto err = snd_pcm_hw_params(SoundDevice, hwParams); err < 0) {
-        return make_error_code(EErrorCode::DeviceInit);
+        return EErrorCode::DeviceInit;
     }
 
     if (auto err = snd_pcm_prepare(SoundDevice); err < 0) {
-        return make_error_code(EErrorCode::DeviceInit);
+        return EErrorCode::DeviceInit;
     }
 
     return {};

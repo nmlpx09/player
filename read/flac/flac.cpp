@@ -35,10 +35,6 @@ FLAC__StreamDecoderWriteStatus TFlacDecoder::write_callback(const FLAC__Frame* f
 
 void TFlacDecoder::error_callback(FLAC__StreamDecoderErrorStatus) { }
 
-TFlac::TFlac() {}
-
-TFlac::~TFlac() {}
-
 std::expected<TFormat, std::error_code> TFlac::Init(std::string fileName) noexcept {
     auto status = Decoder.init(fileName);
 
