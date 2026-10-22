@@ -2,4 +2,4 @@
 
 #include <string>
 
-static const std::string DEVICE = "pulse";
+inline constexpr std::string DEVICE = "pulse";

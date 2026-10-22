@@ -31,9 +31,6 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
     } else if (sampleFormat.BitsPerSample == 16) {
         format = PA_SAMPLE_S16LE;
         frameSize = 2 * sampleFormat.NumChannels;
-    } else if (sampleFormat.BitsPerSample == 32) {
-        format = PA_SAMPLE_S32LE;
-        frameSize = 4 * sampleFormat.NumChannels;
     } else {
         return EErrorCode::DeviceInit;
     }

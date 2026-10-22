@@ -100,17 +100,21 @@ void Read(TContextPtr ctx, TFiles files) noexcept {
 
 TFiles GetFiles(const TFiles::value_type& path) {
     TFiles files;
+    try {
 
-    if (std::filesystem::is_directory(path)) {
-        for (const auto& entry : std::filesystem::directory_iterator(path)) {
-            if (TFormatPermited::Format.contains(entry.path().extension())) {
-                files.push_back(entry.path());
+        if (std::filesystem::is_directory(path)) {
+            for (const auto& entry : std::filesystem::directory_iterator(path)) {
+                if (TFormatPermited::Format.contains(entry.path().extension())) {
+                    files.push_back(entry.path());
+                }
+            }
+        } else {
+            if (TFormatPermited::Format.contains(path.extension())) {
+                files.push_back(path);
             }
         }
-    } else {
-        if (TFormatPermited::Format.contains(path.extension())) {
-            files.push_back(path);
-        }
+    } catch(const std::exception& ex) {
+        std::cerr << std::format("get files error: {}", ex.what()) << std::endl;
     }
 
     std::sort(files.begin(), files.end());
