@@ -36,13 +36,13 @@ public:
         return "unknown error code: " + std::to_string(value);
     }
 
-    static const TErrorCategory& instance() {
+    static const TErrorCategory& instance() noexcept {
         static const TErrorCategory errorCategory;
         return errorCategory;
     }
 };
 
-inline std::error_code make_error_code(EErrorCode errorCode) {
+inline std::error_code make_error_code(EErrorCode errorCode) noexcept {
     return {errorCode, TErrorCategory::instance()};
 }
 

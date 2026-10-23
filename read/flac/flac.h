@@ -13,9 +13,9 @@ namespace NRead {
 
 struct TFlacDecoder: FLAC::Decoder::File {
 public:
-    FLAC__StreamDecoderWriteStatus write_callback(const FLAC__Frame* frame, const FLAC__int32* const buffer[]) override;
-    void metadata_callback(const FLAC__StreamMetadata* metadata) override;
-    void error_callback(FLAC__StreamDecoderErrorStatus status) override;
+    FLAC__StreamDecoderWriteStatus write_callback(const FLAC__Frame* frame, const FLAC__int32* const buffer[]) noexcept override;
+    void metadata_callback(const FLAC__StreamMetadata* metadata) noexcept override;
+    void error_callback(FLAC__StreamDecoderErrorStatus status) noexcept override;
 
     TCallback Callback;
     std::size_t DataSize = 0;
@@ -32,12 +32,12 @@ public:
     TFlac() = default;
     TFlac(const TFlac&) = delete;
     TFlac(TFlac&&) noexcept = delete;
-    ~TFlac() = default;
+    ~TFlac() noexcept = default;
     TFlac& operator=(const TFlac&) = delete;
     TFlac& operator=(TFlac&&) = delete;
 
-    std::expected<TFormat, std::error_code> Init(std::string fileName) noexcept override;
-    std::expected<bool, std::error_code> Read(const TCallback& callback) noexcept override;
+    std::expected<TFormat, std::error_code> Init(std::string fileName) override;
+    std::expected<bool, std::error_code> Read(const TCallback& callback) override;
 
 private:
     TFlacDecoder Decoder;

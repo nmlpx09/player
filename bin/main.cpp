@@ -11,88 +11,100 @@
 
 #include <algorithm>
 #include <chrono>
-#include <format>
 #include <filesystem>
 #include <iostream>
 #include <memory>
 #include <thread>
 
 
-void Write(TContextPtr ctx, NWrite::TWritePtr write) noexcept {
-    auto getPayload = [=] () noexcept {
-        auto payload = ctx->GetPayload();
-        ctx->ReadNotify();
+void Write(TContextPtr ctx, NWrite::TWritePtr write) {
+    try {
+        auto getPayload = [=] () {
+            auto payload = ctx->GetPayload();
+            ctx->ReadNotify();
 
-        std::this_thread::sleep_until(std::get<0>(payload));
+            std::this_thread::sleep_until(std::get<0>(payload));
 
-        return payload;
-    };
-
-    while (true) {
-        ctx->WriteWait();
-
-        if (ctx->IsStop()) {
-            break;
-        }
-
-        if (auto ec = write->Write(getPayload); ec) {
-            std::cerr << "write error: " + ec.message() << std::endl;
-            break;
-        }
-    }
-
-    ctx->Stop();
-}
-
-void Read(TContextPtr ctx, TFiles files) noexcept {
-    const auto delta = std::chrono::milliseconds(500);
-
-    for (const auto& file: files) {
-        if (ctx->IsStop()) {
-            break;
-        }
-
-        if (!TFormatPermited::Format.contains(file.extension())) {
-            continue;
-        }
-
-        auto time = std::chrono::steady_clock::now() + delta;
-
-        TFormat format;
-
-        NRead::TReadPtr read = std::make_unique<NRead::TFlac>();
-        if (auto result = read->Init(file.string()); !result) {
-            std::cerr << std::format("read init error: {}", result.error().message()) << std::endl;
-            return;
-        } else {
-            format = result.value();
-        }
-
-
-        std::cout << std::format("{}; {}hz {}bps {}ch\n",
-            file.filename().string(), format.SampleRate, format.BitsPerSample, format.NumChannels);
-
-        auto storePayload = [=, &time, &format] (TData data) noexcept {
-            ctx->StorePayload(std::make_tuple(time, format, std::move(data)));
-            ctx->WriteNotify();
-
-            time += delta;
+            return payload;
         };
 
         while (true) {
-            ctx->ReadWait();
+            ctx->WriteWait();
 
             if (ctx->IsStop()) {
                 break;
             }
 
-            if (auto result = read->Read(storePayload); !result) {
-                std::cerr << std::format("read error: {}", result.error().message()) << std::endl;
-                break;
-            } else if (!result.value()) {
+            if (auto ec = write->Write(getPayload); ec) {
+                std::cerr << "write error: " + ec.message() << std::endl;
                 break;
             }
         }
+    } catch (const std::exception& ex) {
+        std::cerr << "write exception:" << ex.what() << std::endl;
+    } catch (...) {
+        std::cerr << "write unknown exception" << std::endl;
+    }
+
+    ctx->Stop();
+}
+
+void Read(TContextPtr ctx, TFiles files) {
+    const auto delta = std::chrono::milliseconds(500);
+
+    try {
+        for (const auto& file: files) {
+            if (ctx->IsStop()) {
+                break;
+            }
+
+            if (!TFormatPermited::Format.contains(file.extension())) {
+                continue;
+            }
+
+            auto time = std::chrono::steady_clock::now() + delta;
+
+            TFormat format;
+
+            NRead::TReadPtr read = std::make_unique<NRead::TFlac>();
+            if (auto result = read->Init(file.string()); !result) {
+                std::cerr << "read init error: " + result.error().message() << std::endl;
+                continue;
+            } else {
+                format = result.value();
+            }
+
+
+            std::cout << file.filename().string() + "; " + std::to_string(format.SampleRate)
+                + "hz " + std::to_string(format.BitsPerSample) + "bps "
+                + std::to_string(format.NumChannels) + "ch\n";
+
+            auto storePayload = [=, &time, &format] (TData data) {
+                ctx->StorePayload(std::make_tuple(time, format, std::move(data)));
+                ctx->WriteNotify();
+
+                time += delta;
+            };
+
+            while (true) {
+                ctx->ReadWait();
+
+                if (ctx->IsStop()) {
+                    break;
+                }
+
+                if (auto result = read->Read(storePayload); !result) {
+                    std::cerr << "read error: " + result.error().message() << std::endl;
+                    break;
+                } else if (!result.value()) {
+                    break;
+                }
+            }
+        }
+    } catch (const std::exception& ex) {
+        std::cerr << "read exception:" << ex.what() << std::endl;
+    } catch (...) {
+        std::cerr << "read unknown exception" << std::endl;
     }
 
     ctx->Stop();
@@ -113,11 +125,10 @@ TFiles GetFiles(const TFiles::value_type& path) {
                 files.push_back(path);
             }
         }
+        std::sort(files.begin(), files.end());
     } catch(const std::exception& ex) {
-        std::cerr << std::format("get files error: {}", ex.what()) << std::endl;
+        std::cerr << "get files error:" << ex.what() << std::endl;
     }
-
-    std::sort(files.begin(), files.end());
 
     return files;
 }

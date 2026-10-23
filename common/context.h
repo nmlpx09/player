@@ -17,10 +17,10 @@ public:
 
     void ReadWait();
     void WriteWait();
-    void ReadNotify();
-    void WriteNotify();
+    void ReadNotify() noexcept;
+    void WriteNotify() noexcept;
 private:
-    bool IsQueueEmpty();
+    bool IsQueueEmpty() noexcept;
 private:
     std::recursive_mutex Mutex;
     std::condition_variable_any WriteCv;

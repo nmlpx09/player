@@ -1,6 +1,6 @@
 #include "context.h"
 
-bool TContext::IsQueueEmpty() {
+bool TContext::IsQueueEmpty() noexcept {
     return Queue.empty();
 }
 
@@ -14,11 +14,11 @@ void TContext::WriteWait() {
     WriteCv.wait(ulock, [this] { return !IsQueueEmpty() || IsStop(); });
 }
 
-void TContext::ReadNotify() {
+void TContext::ReadNotify() noexcept {
     ReadCv.notify_one();
 }
 
-void TContext::WriteNotify() {
+void TContext::WriteNotify() noexcept {
     WriteCv.notify_one();
 }
 

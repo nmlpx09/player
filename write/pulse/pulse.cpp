@@ -4,7 +4,7 @@
 
 namespace NWrite {
 
-TWrite::TWrite(std::string) { }
+TWrite::TWrite(std::string) noexcept { }
 
 TWrite::~TWrite() {
     if (SoundDevice != nullptr) {
@@ -14,6 +14,12 @@ TWrite::~TWrite() {
 }
 
 std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
+    if (SoundDevice != nullptr) {
+        pa_simple_drain(SoundDevice, nullptr);
+        pa_simple_free(SoundDevice);
+        SoundDevice = nullptr;
+    }
+
     pa_sample_format_t format;
 
     if (!TFormatPermited::NumChannels.contains(sampleFormat.NumChannels)) {
@@ -60,7 +66,7 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
     return {};
 }
 
-std::error_code TWrite::Write(const TCallback& callback) noexcept {
+std::error_code TWrite::Write(const TCallback& callback) {
     auto data = callback();
     
     auto&& [_, format, buffer] = data;

@@ -4,7 +4,7 @@
 
 namespace NRead {
 
-void TFlacDecoder::metadata_callback(const FLAC__StreamMetadata *metadata) {
+void TFlacDecoder::metadata_callback(const FLAC__StreamMetadata *metadata) noexcept {
     if(metadata->type == FLAC__METADATA_TYPE_STREAMINFO) {
         SampleRate = metadata->data.stream_info.sample_rate;
         NumChannels = metadata->data.stream_info.channels;
@@ -13,29 +13,33 @@ void TFlacDecoder::metadata_callback(const FLAC__StreamMetadata *metadata) {
     }
 }
 
-FLAC__StreamDecoderWriteStatus TFlacDecoder::write_callback(const FLAC__Frame* frame, const FLAC__int32* const frames[]) {
-    if (!Callback) {
+FLAC__StreamDecoderWriteStatus TFlacDecoder::write_callback(const FLAC__Frame* frame, const FLAC__int32* const frames[]) noexcept {
+    try {
+        if (!Callback) {
+            return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
+        }
+
+        for (auto index = 0u; index < frame->header.blocksize; ++index) {
+            const auto* l = reinterpret_cast<const std::uint8_t*>(&frames[0][index]);
+            const auto* r = reinterpret_cast<const std::uint8_t*>(&frames[1][index]);
+            Buffer.insert(Buffer.end(), l, l + BytesPerSample);
+            Buffer.insert(Buffer.end(), r, r + BytesPerSample);
+        }
+
+        while (Buffer.size() >= DataSize) {
+            Callback(TData(Buffer.begin(), Buffer.begin() + DataSize));
+            Buffer.erase(Buffer.begin(), Buffer.begin() + DataSize);
+        }
+        return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
+
+    } catch (...) {
         return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
     }
-
-    for (auto index = 0u; index < frame->header.blocksize; ++index) {
-        const auto* l = reinterpret_cast<const std::uint8_t*>(&frames[0][index]);
-        const auto* r = reinterpret_cast<const std::uint8_t*>(&frames[1][index]);
-        Buffer.insert(Buffer.end(), l, l + BytesPerSample);
-        Buffer.insert(Buffer.end(), r, r + BytesPerSample);
-    }
-
-    while (Buffer.size() >= DataSize) {
-        Callback(TData(Buffer.begin(), Buffer.begin() + DataSize));
-        Buffer.erase(Buffer.begin(), Buffer.begin() + DataSize);
-    }
-
-    return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
-void TFlacDecoder::error_callback(FLAC__StreamDecoderErrorStatus) { }
+void TFlacDecoder::error_callback(FLAC__StreamDecoderErrorStatus) noexcept { }
 
-std::expected<TFormat, std::error_code> TFlac::Init(std::string fileName) noexcept {
+std::expected<TFormat, std::error_code> TFlac::Init(std::string fileName) {
     auto status = Decoder.init(fileName);
 
     if(status != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
@@ -65,7 +69,7 @@ std::expected<TFormat, std::error_code> TFlac::Init(std::string fileName) noexce
     };
 }
 
-std::expected<bool, std::error_code> TFlac::Read(const TCallback& callback) noexcept {
+std::expected<bool, std::error_code> TFlac::Read(const TCallback& callback) {
     Decoder.Callback = callback;
 
     if (!Decoder.process_single()) {

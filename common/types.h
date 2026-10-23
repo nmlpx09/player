@@ -23,7 +23,7 @@ struct TFormat {
     std::uint32_t NumChannels = 2;
     std::uint32_t SampleRate = 44100;
 
-    bool operator ==(const TFormat& lhs) const = default;
+    bool operator ==(const TFormat& lhs) const noexcept = default;
 };
 
 using TFiles = std::vector<std::filesystem::path>;

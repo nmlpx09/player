@@ -4,7 +4,7 @@
 
 namespace NWrite {
 
-TWrite::TWrite(std::string device) : Device(std::move(device)) { }
+TWrite::TWrite(std::string device) noexcept : Device(std::move(device)) { }
 
 TWrite::~TWrite() {
     if (SoundDevice != nullptr) {
@@ -15,6 +15,7 @@ TWrite::~TWrite() {
 
 std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
     if (SoundDevice != nullptr) {
+        snd_pcm_drain(SoundDevice);
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
     }
@@ -84,7 +85,7 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
     return {};
 }
 
-std::error_code TWrite::Write(const TCallback& callback) noexcept {
+std::error_code TWrite::Write(const TCallback& callback) {
     auto data = callback();
 
     auto&& [_, format, buffer] = data;
