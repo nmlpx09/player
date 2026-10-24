@@ -1,5 +1,5 @@
 # build artifacts
-bin/*.o
+*.o
 bin/play
 
 # editors / os

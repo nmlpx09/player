@@ -100,15 +100,17 @@ std::error_code TWrite::Write(const TCallback& callback) {
 
     auto frames = buffer.size() / FrameSize;
 
-    auto err = snd_pcm_writei(SoundDevice, buffer.data(), frames);
-
-    if (err == -ENODEV) {
-        if (auto ec = Init(format); ec) {
-            return ec;
+    if (auto err = snd_pcm_writei(SoundDevice, buffer.data(), frames); err < 0) {
+        if (err == -ENODEV) {
+            if (auto ec = Init(format); ec) {
+                return ec;
+            }
+        } else if (snd_pcm_recover(SoundDevice, err, 1) < 0) {
+            return EErrorCode::DeviceInit;
         }
-    } else if (err == -EPIPE) {
-        snd_pcm_prepare(SoundDevice);
-        snd_pcm_writei(SoundDevice, buffer.data(), frames);
+        if(err = snd_pcm_writei(SoundDevice, buffer.data(), frames); err < 0) {
+            return EErrorCode::Error;
+        }
     }
 
     return {};

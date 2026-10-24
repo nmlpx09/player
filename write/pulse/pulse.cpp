@@ -79,7 +79,14 @@ std::error_code TWrite::Write(const TCallback& callback) {
         }
     }
 
-    pa_simple_write(SoundDevice, buffer.data(), buffer.size(), nullptr);
+    if (auto err = pa_simple_write(SoundDevice, buffer.data(), buffer.size(), nullptr); err < 0) {
+        if (auto ec = Init(format); ec) {
+            return ec;
+        }
+        if (err = pa_simple_write(SoundDevice, buffer.data(), buffer.size(), nullptr); err < 0) {
+            return EErrorCode::Error;
+        }
+    }
     return {};
 }
 

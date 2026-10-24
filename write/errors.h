@@ -6,7 +6,8 @@ namespace NWrite {
 
 enum EErrorCode {
     Ok,
-    DeviceInit
+    DeviceInit,
+    Error
 };
 
 }
@@ -31,6 +32,8 @@ public:
                 return "ok";
             case DeviceInit:
                 return "device init error";
+            case Error:
+                return "write error";
         }
 
         return "unknown error code: " + std::to_string(value);
