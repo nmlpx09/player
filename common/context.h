@@ -10,7 +10,7 @@
 struct TContext {
 public:
     bool IsStop();
-    void Stop();
+    void Stop() noexcept;
 
     void StorePayload(TPayload&& payload);
     TPayload GetPayload();

@@ -22,10 +22,15 @@ void TContext::WriteNotify() noexcept {
     WriteCv.notify_one();
 }
 
-void TContext::Stop() {
-    std::unique_lock<std::recursive_mutex> ulock{Mutex};
-    if (!StopFlag) {
-        StopFlag = true;
+void TContext::Stop() noexcept {
+    try {
+        std::unique_lock<std::recursive_mutex> ulock{Mutex};
+        if (!StopFlag) {
+            StopFlag = true;
+            ReadCv.notify_one();
+            WriteCv.notify_one();
+        }
+    } catch(...) {
         ReadCv.notify_one();
         WriteCv.notify_one();
     }
@@ -43,7 +48,7 @@ void TContext::StorePayload(TPayload&& payload) {
 
 TPayload TContext::GetPayload() {
     std::unique_lock<std::recursive_mutex> ulock{Mutex};
-    auto payload = Queue.front();
+    auto payload = std::move(Queue.front());
     Queue.pop_front();
     return payload;
 }

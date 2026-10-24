@@ -45,7 +45,6 @@ void Write(TContextPtr ctx, NWrite::TWritePtr write) {
     } catch (...) {
         std::cerr << "write unknown exception" << std::endl;
     }
-
     ctx->Stop();
 }
 
@@ -106,7 +105,6 @@ void Read(TContextPtr ctx, TFiles files) {
     } catch (...) {
         std::cerr << "read unknown exception" << std::endl;
     }
-
     ctx->Stop();
 }
 
