@@ -1,6 +1,6 @@
 # build artifacts
 *.o
-bin/play
+/play
 
 # editors / os
 *.swp
