@@ -6,7 +6,7 @@ namespace NWrite {
 
 TWrite::TWrite(std::string) noexcept { }
 
-TWrite::~TWrite() {
+TWrite::~TWrite() noexcept {
     if (SoundDevice != nullptr) {
         pa_simple_drain(SoundDevice, nullptr);
         pa_simple_free(SoundDevice);

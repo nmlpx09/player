@@ -6,7 +6,7 @@ namespace NWrite {
 
 TWrite::TWrite(std::string device) noexcept : Device(std::move(device)) { }
 
-TWrite::~TWrite() {
+TWrite::~TWrite() noexcept {
     if (SoundDevice != nullptr) {
         snd_pcm_drain(SoundDevice);
         snd_pcm_close(SoundDevice);
