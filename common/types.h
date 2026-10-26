@@ -1,12 +1,10 @@
 #pragma once
 
-#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <vector>
 #include <set>
 #include <string>
-#include <tuple>
 #include <utility>
 
 using TData = std::vector<std::uint8_t>;
@@ -28,4 +26,4 @@ struct TFormat {
 
 using TFiles = std::vector<std::filesystem::path>;
 
-using TPayload = std::tuple<std::chrono::time_point<std::chrono::steady_clock>, TFormat, TData>;
+using TPayload = std::pair<TFormat, TData>;

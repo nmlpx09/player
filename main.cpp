@@ -10,7 +10,6 @@
 #endif
 
 #include <algorithm>
-#include <chrono>
 #include <filesystem>
 #include <iostream>
 #include <memory>
@@ -22,9 +21,6 @@ void Write(TContextPtr ctx, NWrite::TWritePtr write) {
         auto getPayload = [=] () {
             auto payload = ctx->GetPayload();
             ctx->ReadNotify();
-
-            std::this_thread::sleep_until(std::get<0>(payload));
-
             return payload;
         };
 
@@ -49,8 +45,6 @@ void Write(TContextPtr ctx, NWrite::TWritePtr write) {
 }
 
 void Read(TContextPtr ctx, TFiles files) {
-    const auto delta = std::chrono::milliseconds(500);
-
     try {
         for (const auto& file: files) {
             if (ctx->IsStop()) {
@@ -60,8 +54,6 @@ void Read(TContextPtr ctx, TFiles files) {
             if (!TFormatPermited::Format.contains(file.extension())) {
                 continue;
             }
-
-            auto time = std::chrono::steady_clock::now() + delta;
 
             TFormat format;
 
@@ -78,11 +70,9 @@ void Read(TContextPtr ctx, TFiles files) {
                 + "hz " + std::to_string(format.BitsPerSample) + "bps "
                 + std::to_string(format.NumChannels) + "ch\n";
 
-            auto storePayload = [=, &time, &format] (TData data) {
-                ctx->StorePayload(std::make_tuple(time, format, std::move(data)));
+            auto storePayload = [=, &format] (TData data) {
+                ctx->StorePayload(std::make_pair(format, std::move(data)));
                 ctx->WriteNotify();
-
-                time += delta;
             };
 
             while (true) {

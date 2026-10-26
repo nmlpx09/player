@@ -88,7 +88,7 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
 std::error_code TWrite::Write(const TCallback& callback) {
     auto data = callback();
 
-    auto&& [_, format, buffer] = data;
+    auto&& [format, buffer] = data;
 
     if (CurrentFormat != format) {
         if(auto ec = Init(format); ec) {
