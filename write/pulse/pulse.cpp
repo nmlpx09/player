@@ -4,7 +4,7 @@
 
 namespace NWrite {
 
-TWrite::TWrite(std::string) noexcept { }
+TWrite::TWrite(std::string device) noexcept : Device(std::move(device)) { }
 
 TWrite::~TWrite() noexcept {
     if (SoundDevice != nullptr) {
@@ -59,7 +59,7 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
         .fragsize = static_cast<std::uint32_t>(-1)
     };
 
-    if (SoundDevice = pa_simple_new(nullptr, "play", PA_STREAM_PLAYBACK, nullptr, "playback", &spec, nullptr, &bufferAttr, nullptr); !SoundDevice) {
+    if (SoundDevice = pa_simple_new(nullptr, "play", PA_STREAM_PLAYBACK, Device.empty() ? nullptr : Device.c_str(), "playback", &spec, nullptr, &bufferAttr, nullptr); !SoundDevice) {
         return EErrorCode::DeviceInit;
     }
 

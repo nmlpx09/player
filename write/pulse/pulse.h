@@ -24,6 +24,7 @@ public:
 
 private:
     pa_simple* SoundDevice = nullptr;
+    std::string Device;
     TFormat CurrentFormat;
 };
 

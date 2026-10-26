@@ -87,29 +87,42 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
 
 std::error_code TWrite::Write(const TCallback& callback) {
     auto data = callback();
-
     auto&& [format, buffer] = data;
 
     if (CurrentFormat != format) {
-        if(auto ec = Init(format); ec) {
+        if (auto ec = Init(format); ec) {
             return ec;
         } else {
             CurrentFormat = format;
         }
     }
 
-    auto frames = buffer.size() / FrameSize;
+    if (FrameSize == 0 || buffer.empty()) {
+        return {};
+    }
 
-    if (auto err = snd_pcm_writei(SoundDevice, buffer.data(), frames); err < 0) {
-        if (err == -ENODEV) {
+    const auto framesTotal = static_cast<snd_pcm_sframes_t>(buffer.size() / FrameSize);
+    auto* ptr = buffer.data();
+    auto remaining = framesTotal;
+
+    while (remaining > 0) {
+        auto written = snd_pcm_writei(SoundDevice, ptr, remaining);
+        if (written > 0) {
+            ptr += written * FrameSize;
+            remaining -= written;
+            continue;
+        }
+
+        if (written == 0) {
+            return EErrorCode::Error;
+        }
+
+        if (written == -ENODEV) {
             if (auto ec = Init(format); ec) {
                 return ec;
             }
-        } else if (snd_pcm_recover(SoundDevice, err, 1) < 0) {
+        } else if (snd_pcm_recover(SoundDevice, static_cast<std::int32_t>(written), 1) < 0) {
             return EErrorCode::DeviceInit;
-        }
-        if(err = snd_pcm_writei(SoundDevice, buffer.data(), frames); err < 0) {
-            return EErrorCode::Error;
         }
     }
 
