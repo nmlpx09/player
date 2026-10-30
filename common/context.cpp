@@ -23,14 +23,9 @@ void TContext::WriteNotify() noexcept {
 }
 
 void TContext::Stop() noexcept {
-    try {
-        std::unique_lock<std::recursive_mutex> ulock{Mutex};
-        if (!StopFlag) {
-            StopFlag = true;
-            ReadCv.notify_one();
-            WriteCv.notify_one();
-        }
-    } catch(...) {
+    std::unique_lock<std::recursive_mutex> ulock{Mutex};
+    if (!StopFlag) {
+        StopFlag = true;
         ReadCv.notify_one();
         WriteCv.notify_one();
     }

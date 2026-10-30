@@ -116,6 +116,7 @@ std::error_code TWrite::Write(const TCallback& callback) {
     const auto framesTotal = static_cast<snd_pcm_sframes_t>(buffer.size() / FrameSize);
     auto* ptr = buffer.data();
     auto remaining = framesTotal;
+    auto isRecover = false;
 
     while (remaining > 0) {
         auto written = snd_pcm_writei(SoundDevice, ptr, remaining);
@@ -125,16 +126,21 @@ std::error_code TWrite::Write(const TCallback& callback) {
             continue;
         }
 
-        if (written == 0) {
-            return EErrorCode::Error;
-        }
-
         if (written == -ENODEV) {
             if (auto ec = Init(format); ec) {
                 return ec;
             }
-        } else if (snd_pcm_recover(SoundDevice, static_cast<std::int32_t>(written), 1) < 0) {
+            continue;
+        }
+
+        if (written <= 0 && isRecover) {
+            return EErrorCode::Error;
+        }
+
+        if (snd_pcm_recover(SoundDevice, static_cast<std::int32_t>(written), 1) < 0) {
             return EErrorCode::DeviceInit;
+        } else {
+            isRecover = true;
         }
     }
 
