@@ -63,8 +63,7 @@ void Read(TContextPtr ctx, TFiles files) {
 
 
             std::cout << file.filename().string() + "; " + std::to_string(format.SampleRate)
-                + "hz " + std::to_string(format.BitsPerSample) + "bps "
-                + std::to_string(format.NumChannels) + "ch\n";
+                + "hz " + std::to_string(format.BitsPerSample) + "bps\n";
 
             auto storePayload = [=, &format] (TData data) {
                 ctx->StorePayload(std::make_pair(format, std::move(data)));

@@ -24,12 +24,13 @@ FLAC__StreamDecoderWriteStatus TFlacDecoder::write_callback(const FLAC__Frame* f
             const auto* r = reinterpret_cast<const std::uint8_t*>(&frames[1][index]);
             Buffer.insert(Buffer.end(), l, l + BytesPerSample);
             Buffer.insert(Buffer.end(), r, r + BytesPerSample);
+            if (Buffer.size() == DataSize) {
+                Callback(std::move(Buffer));
+                Buffer.reserve(DataSize);
+            }
+
         }
 
-        while (Buffer.size() >= DataSize) {
-            Callback(TData(Buffer.begin(), Buffer.begin() + DataSize));
-            Buffer.erase(Buffer.begin(), Buffer.begin() + DataSize);
-        }
         return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 
     } catch (...) {
@@ -48,7 +49,7 @@ std::expected<TFormat, std::error_code> TFlac::Init(std::string fileName) {
 
     Decoder.process_until_end_of_metadata();
 
-    if (!TFormatPermited::NumChannels.contains(Decoder.NumChannels)) {
+    if (Decoder.NumChannels != 2) {
         return std::unexpected(EErrorCode::FileFormat);
     }
 
@@ -61,10 +62,10 @@ std::expected<TFormat, std::error_code> TFlac::Init(std::string fileName) {
     }
 
     Decoder.DataSize = Decoder.NumChannels * Decoder.SampleRate * Decoder.BytesPerSample;
+    Decoder.Buffer.reserve(Decoder.DataSize);
 
     return TFormat {
         .BitsPerSample = Decoder.BitsPerSample,
-        .NumChannels = Decoder.NumChannels,
         .SampleRate =  Decoder.SampleRate
     };
 }

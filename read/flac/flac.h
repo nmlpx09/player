@@ -6,7 +6,7 @@
 #include "FLAC++/decoder.h"
 
 #include <cstdint>
-#include <deque>
+#include <vector>
 #include <string>
 
 namespace NRead {
@@ -24,7 +24,7 @@ public:
     std::uint32_t BytesPerSample = 0;
     std::uint32_t SampleRate = 0;
 
-    std::deque<TData::value_type> Buffer;
+    std::vector<TData::value_type> Buffer;
 };
 
 struct TFlac: TInterface {

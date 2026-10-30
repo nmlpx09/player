@@ -46,13 +46,7 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
         return EErrorCode::DeviceInit;
     }
 
-    if (!TFormatPermited::NumChannels.contains(sampleFormat.NumChannels)) {
-        snd_pcm_close(SoundDevice);
-        SoundDevice = nullptr;
-        return EErrorCode::DeviceInit;
-    }
-
-    if (auto err = snd_pcm_hw_params_set_channels(SoundDevice, hwParams, sampleFormat.NumChannels); err < 0) {
+    if (auto err = snd_pcm_hw_params_set_channels(SoundDevice, hwParams, 2); err < 0) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
         return EErrorCode::DeviceInit;
@@ -67,10 +61,10 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
     snd_pcm_format_t format;
     if (sampleFormat.BitsPerSample == 24) {
         format = SND_PCM_FORMAT_S24_3LE;
-        FrameSize = 3 * sampleFormat.NumChannels;
+        FrameSize = 3 * 2;
     } else if (sampleFormat.BitsPerSample == 16) {
         format = SND_PCM_FORMAT_S16_LE;
-        FrameSize = 2 * sampleFormat.NumChannels;
+        FrameSize = 2 * 2;
     } else {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
