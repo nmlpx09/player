@@ -3,11 +3,7 @@
 #include <common/context.h>
 #include <common/types.h>
 #include <read/flac/flac.h>
-#ifdef ALSA
 #include <write/alsa/alsa.h>
-#else
-#include <write/pulse/pulse.h>
-#endif
 
 #include <algorithm>
 #include <filesystem>

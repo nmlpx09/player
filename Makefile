@@ -1,34 +1,37 @@
-CC = g++
-CCFLAGS = -O3 --std=c++23 -pedantic -Wall -W -Werror -Wextra -c -I.
-DEFINES =
+CXX ?= g++
+CXXFLAGS ?= -O3 -std=c++23 -pedantic -Wall -W -Werror -Wextra
+CXXFLAGS += -I. $(FLAC_CFLAGS)
+LDFLAGS ?=
 
-OBJ = main.o common/context.o read/flac/flac.o
-
-OBJ_ALSA = $(OBJ) write/alsa/alsa.o
-LDFLAGS_ALSA = -lasound -lFLAC++
-
-OBJ_PULSE =  $(OBJ) write/pulse/pulse.o
-LDFLAGS_PULSE = -lpulse-simple -lFLAC++
-
-RUN = play
 PREFIX ?= /usr
 DESTDIR ?=
+RUN := play
 
-alsa: DEFINES += -DALSA
-alsa: $(OBJ_ALSA)
-	$(CC) $^ -o $(RUN) $(LDFLAGS_ALSA)
+# pkg-config with fallbacks
+FLAC_CFLAGS := $(shell pkg-config --cflags flac++ 2>/dev/null)
+FLAC_LIBS   := $(shell pkg-config --libs flac++ 2>/dev/null || echo -lFLAC++)
+ALSA_LIBS   := $(shell pkg-config --libs alsa 2>/dev/null || echo -lasound)
 
-pulse: $(OBJ_PULSE)
-	$(CC) $^ -o $(RUN) $(LDFLAGS_PULSE)
+OBJ := main.o common/context.o read/flac/flac.o write/alsa/alsa.o
+LDLIBS := $(ALSA_LIBS) $(FLAC_LIBS)
 
-%.o: %.cpp
-	$(CC) $(DEFINES) $(CCFLAGS) $< -o $@
+DEPS := $(OBJ:.o=.d)
+
+.PHONY: all install clean
+
+all: $(RUN)
+
+$(RUN): $(OBJ)
+	$(CXX) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 install: $(RUN)
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install -m 755 -s $(RUN) $(DESTDIR)$(PREFIX)/bin/
 
 clean:
-	rm -f $(OBJ_ALSA) $(OBJ_PULSE) $(RUN)
+	rm -f $(OBJ) $(DEPS) $(RUN)
 
-.PHONY: alsa pulse install install_termux clean
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+-include $(DEPS)

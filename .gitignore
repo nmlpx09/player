@@ -1,5 +1,6 @@
 # build artifacts
 *.o
+*.d
 /play
 
 # editors / os
