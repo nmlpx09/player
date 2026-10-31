@@ -83,7 +83,14 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
         return EErrorCode::DeviceInit;
     }
 
+    const auto requestedRate = sampleFormat.SampleRate;
     if (auto err = snd_pcm_hw_params_set_rate_near(SoundDevice, hwParams, &sampleFormat.SampleRate, 0); err < 0) {
+        snd_pcm_close(SoundDevice);
+        SoundDevice = nullptr;
+        return EErrorCode::DeviceInit;
+    }
+
+    if (sampleFormat.SampleRate != requestedRate) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
         return EErrorCode::DeviceInit;
@@ -130,6 +137,7 @@ std::error_code TWrite::Write(const TCallback& callback) {
         if (written > 0) {
             ptr += written * FrameSize;
             remaining -= written;
+            isRecover = false;
             continue;
         }
 

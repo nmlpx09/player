@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <signal.h>
 #include <thread>
 
 
@@ -138,6 +139,18 @@ int main(int argc, char *argv[]) {
     }
 
     auto ctx = std::make_shared<TContext>();
+
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGINT);
+    pthread_sigmask(SIG_BLOCK, &mask, nullptr);
+
+    std::thread tSignal([ctx, mask]() {
+        int sig = 0;
+        sigwait(&mask, &sig);
+        ctx->Stop();
+    });
+    tSignal.detach();
 
     NWrite::TWritePtr write = std::make_unique<NWrite::TWrite>(device);
 
