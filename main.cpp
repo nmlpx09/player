@@ -23,7 +23,7 @@ void Write(TContextPtr ctx, NWrite::TWritePtr write) {
         while (true) {
             ctx->WriteWait();
 
-            if (ctx->IsStop()) {
+            if (ctx->IsStop() && ctx->IsQueueEmpty()) {
                 break;
             }
 

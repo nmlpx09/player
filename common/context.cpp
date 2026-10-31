@@ -1,6 +1,7 @@
 #include "context.h"
 
-bool TContext::IsQueueEmpty() noexcept {
+bool TContext::IsQueueEmpty() {
+    std::unique_lock<std::recursive_mutex> ulock{Mutex};
     return Queue.empty();
 }
 

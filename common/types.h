@@ -12,7 +12,7 @@ using TData = std::vector<std::uint8_t>;
 struct TFormatPermited {
     inline static std::set<std::uint32_t> SampleRate = {44100, 48000, 96000, 192000};
     inline static std::set<std::uint32_t> BitsPerSample = {16, 24};
-    inline static std::set<std::string> Format = {".flac"};
+    inline static std::set<std::string> Format = {".flac", ".FLAC"};
 };
 
 struct TFormat {
