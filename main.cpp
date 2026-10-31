@@ -141,11 +141,6 @@ int main(int argc, char *argv[]) {
 
     NWrite::TWritePtr write = std::make_unique<NWrite::TWrite>(device);
 
-    if (auto ec = write->Init(TFormat{}); ec) {
-        std::cerr << "init device error: " << device << std::endl;
-        return 1;
-    }
-
     std::thread tWrite(Write, ctx, std::move(write));
     std::thread tRead(Read, ctx, std::move(files));
 
