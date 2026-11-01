@@ -84,6 +84,11 @@ std::expected<bool, std::error_code> TFlac::Read(const TCallback& callback) {
     }
 
     if (Decoder.get_state() == FLAC__STREAM_DECODER_END_OF_STREAM) {
+        if (Decoder.Pos > 0) {
+            Decoder.Callback(TData(Decoder.Buffer.begin(), Decoder.Buffer.begin() + Decoder.Pos));
+            Decoder.Pos = 0;
+        }
+
         return false;
     }
 
