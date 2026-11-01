@@ -2,6 +2,8 @@
 
 #include <read/errors.h>
 
+#include <cstring>
+
 namespace NRead {
 
 void TFlacDecoder::metadata_callback(const FLAC__StreamMetadata *metadata) noexcept {
@@ -20,15 +22,16 @@ FLAC__StreamDecoderWriteStatus TFlacDecoder::write_callback(const FLAC__Frame* f
         }
 
         for (auto index = 0u; index < frame->header.blocksize; ++index) {
-            const auto* l = reinterpret_cast<const std::uint8_t*>(&frames[0][index]);
-            const auto* r = reinterpret_cast<const std::uint8_t*>(&frames[1][index]);
-            Buffer.insert(Buffer.end(), l, l + BytesPerSample);
-            Buffer.insert(Buffer.end(), r, r + BytesPerSample);
-            if (Buffer.size() == DataSize) {
-                Callback(std::move(Buffer));
-                Buffer.reserve(DataSize);
-            }
+            std::memcpy(Buffer.data() + Pos, &frames[0][index], BytesPerSample);
+            Pos += BytesPerSample;
+            std::memcpy(Buffer.data() + Pos, &frames[1][index], BytesPerSample);
+            Pos += BytesPerSample;
 
+            if (Pos == DataSize) {
+                Callback(std::move(Buffer));
+                Buffer.resize(DataSize);
+                Pos = 0;
+            }
         }
 
         return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
@@ -62,7 +65,8 @@ std::expected<TFormat, std::error_code> TFlac::Init(std::string fileName) {
     }
 
     Decoder.DataSize = Decoder.NumChannels * Decoder.SampleRate * Decoder.BytesPerSample;
-    Decoder.Buffer.reserve(Decoder.DataSize);
+    Decoder.Buffer.resize(Decoder.DataSize);
+    Decoder.Pos = 0;
 
     return TFormat {
         .BitsPerSample = Decoder.BitsPerSample,

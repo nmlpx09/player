@@ -19,6 +19,7 @@ public:
 
     TCallback Callback;
     std::size_t DataSize = 0;
+    std::size_t Pos = 0;
     std::uint32_t NumChannels = 0;
     std::uint32_t BitsPerSample = 0;
     std::uint32_t BytesPerSample = 0;
