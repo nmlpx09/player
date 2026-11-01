@@ -1,5 +1,3 @@
-#include "config.h"
-
 #include <context/context.h>
 #include <types.h>
 #include <read/flac/flac.h>
@@ -125,7 +123,7 @@ int main(int argc, char *argv[]) {
     if (argc == 3) {
         device = std::string{argv[2]};
     } else {
-        device = DEVICE;
+        device = "default";
     }
 
     auto ctx = std::make_shared<TContext>();
