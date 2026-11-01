@@ -12,7 +12,6 @@
 #include <signal.h>
 #include <thread>
 
-
 void Write(TContextPtr ctx, NWrite::TWritePtr write) {
     try {
         auto getPayload = [=] () {
@@ -57,7 +56,6 @@ void Read(TContextPtr ctx, TFiles files) {
             } else {
                 format = result.value();
             }
-
 
             std::cout << file.filename().string() + "; " + std::to_string(format.SampleRate)
                 + "hz " + std::to_string(format.BitsPerSample) + "bps\n";

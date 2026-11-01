@@ -34,7 +34,7 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
         return EErrorCode::HwParams;
     }
 
-    if (auto err = snd_pcm_hw_params_set_rate_resample(SoundDevice, hwParams, 1); err < 0) {
+    if (auto err = snd_pcm_hw_params_set_rate_resample(SoundDevice, hwParams, 0); err < 0) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
         return EErrorCode::HwParams;
@@ -50,12 +50,6 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
         return EErrorCode::HwParams;
-    }
-
-    if (!TFormatPermited::BitsPerSample.contains(sampleFormat.BitsPerSample)) {
-        snd_pcm_close(SoundDevice);
-        SoundDevice = nullptr;
-        return EErrorCode::UnsupportedFormat;
     }
 
     snd_pcm_format_t format;

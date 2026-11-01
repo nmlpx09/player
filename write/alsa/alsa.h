@@ -6,7 +6,6 @@
 
 #include <common/types.h>
 
-#include <cstdint>
 #include <string>
 
 namespace NWrite {

@@ -2,7 +2,6 @@
 
 #include <common/types.h>
 
-#include <cstdint>
 #include <expected>
 #include <functional>
 #include <memory>
