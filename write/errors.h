@@ -6,6 +6,10 @@ namespace NWrite {
 
 enum EErrorCode {
     Ok,
+    DeviceOpen,
+    HwParams,
+    UnsupportedFormat,
+    UnsupportedRate,
     DeviceInit,
     Error
 };
@@ -30,6 +34,14 @@ public:
         switch (value) {
             case Ok:
                 return "ok";
+            case DeviceOpen:
+                return "device open error";
+            case HwParams:
+                return "hardware params error";
+            case UnsupportedFormat:
+                return "unsupported sample format";
+            case UnsupportedRate:
+                return "unsupported sample rate";
             case DeviceInit:
                 return "device init error";
             case Error:

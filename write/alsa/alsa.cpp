@@ -22,7 +22,7 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
     }
 
     if (auto err = snd_pcm_open(&SoundDevice, Device.c_str(), SND_PCM_STREAM_PLAYBACK, 0); err < 0) {
-        return EErrorCode::DeviceInit;
+        return EErrorCode::DeviceOpen;
     }
 
     snd_pcm_hw_params_t* hwParams;
@@ -31,31 +31,31 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
     if (auto err = snd_pcm_hw_params_any(SoundDevice, hwParams); err < 0) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
-        return EErrorCode::DeviceInit;
+        return EErrorCode::HwParams;
     }
 
     if (auto err = snd_pcm_hw_params_set_rate_resample(SoundDevice, hwParams, 1); err < 0) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
-        return EErrorCode::DeviceInit;
+        return EErrorCode::HwParams;
     }
 
     if (auto err = snd_pcm_hw_params_set_access(SoundDevice, hwParams, SND_PCM_ACCESS_RW_INTERLEAVED); err < 0) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
-        return EErrorCode::DeviceInit;
+        return EErrorCode::HwParams;
     }
 
     if (auto err = snd_pcm_hw_params_set_channels(SoundDevice, hwParams, 2); err < 0) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
-        return EErrorCode::DeviceInit;
+        return EErrorCode::HwParams;
     }
 
     if (!TFormatPermited::BitsPerSample.contains(sampleFormat.BitsPerSample)) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
-        return EErrorCode::DeviceInit;
+        return EErrorCode::UnsupportedFormat;
     }
 
     snd_pcm_format_t format;
@@ -68,44 +68,44 @@ std::error_code TWrite::Init(TFormat sampleFormat) noexcept {
     } else {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
-        return EErrorCode::DeviceInit;
+        return EErrorCode::UnsupportedFormat;
     }
 
     if (auto err = snd_pcm_hw_params_set_format(SoundDevice, hwParams, format); err < 0) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
-        return EErrorCode::DeviceInit;
+        return EErrorCode::UnsupportedFormat;
     }
 
     if (!TFormatPermited::SampleRate.contains(sampleFormat.SampleRate)) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
-        return EErrorCode::DeviceInit;
+        return EErrorCode::UnsupportedRate;
     }
 
     const auto requestedRate = sampleFormat.SampleRate;
     if (auto err = snd_pcm_hw_params_set_rate_near(SoundDevice, hwParams, &sampleFormat.SampleRate, 0); err < 0) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
-        return EErrorCode::DeviceInit;
+        return EErrorCode::UnsupportedRate;
     }
 
     if (sampleFormat.SampleRate != requestedRate) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
-        return EErrorCode::DeviceInit;
+        return EErrorCode::UnsupportedRate;
     }
 
     if (auto err = snd_pcm_hw_params(SoundDevice, hwParams); err < 0) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
-        return EErrorCode::DeviceInit;
+        return EErrorCode::HwParams;
     }
 
     if (auto err = snd_pcm_prepare(SoundDevice); err < 0) {
         snd_pcm_close(SoundDevice);
         SoundDevice = nullptr;
-        return EErrorCode::DeviceInit;
+        return EErrorCode::HwParams;
     }
 
     return {};
