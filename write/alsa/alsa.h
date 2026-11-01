@@ -4,7 +4,7 @@
 
 #include <alsa/asoundlib.h>
 
-#include <common/types.h>
+#include <types.h>
 
 #include <string>
 

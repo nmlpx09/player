@@ -1,7 +1,7 @@
 #include "config.h"
 
-#include <common/context.h>
-#include <common/types.h>
+#include <context/context.h>
+#include <types.h>
 #include <read/flac/flac.h>
 #include <write/alsa/alsa.h>
 

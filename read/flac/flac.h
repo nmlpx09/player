@@ -1,6 +1,6 @@
 #pragma once
 
-#include <common/types.h>
+#include <types.h>
 #include <read/interface.h>
 
 #include "FLAC++/decoder.h"
