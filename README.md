@@ -19,7 +19,6 @@ make
 # install
 
 make install
-# optional: make install PREFIX=/usr/local DESTDIR=/tmp/pkg
 
 # usage
 
