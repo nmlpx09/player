@@ -21,12 +21,8 @@ void Write(TContextPtr ctx, NWrite::TWritePtr write) {
             return payload;
         };
 
-        while (true) {
+        while (!ctx->IsStop() || !ctx->IsQueueEmpty()) {
             ctx->WriteWait();
-
-            if (ctx->IsStop() && ctx->IsQueueEmpty()) {
-                break;
-            }
 
             if (auto ec = write->Write(getPayload); ec) {
                 std::cerr << "write error: " + ec.message() << std::endl;
@@ -71,12 +67,8 @@ void Read(TContextPtr ctx, TFiles files) {
                 ctx->WriteNotify();
             };
 
-            while (true) {
+            while (!ctx->IsStop()) {
                 ctx->ReadWait();
-
-                if (ctx->IsStop()) {
-                    break;
-                }
 
                 if (auto result = read->Read(storePayload); !result) {
                     std::cerr << "read error: " + result.error().message() << std::endl;

@@ -21,9 +21,9 @@ public:
     void WriteNotify() noexcept;
     bool IsQueueEmpty();
 private:
-    std::recursive_mutex Mutex;
-    std::condition_variable_any WriteCv;
-    std::condition_variable_any ReadCv;
+    std::mutex Mutex;
+    std::condition_variable WriteCv;
+    std::condition_variable ReadCv;
     std::list<TPayload> Queue;
     bool StopFlag = false;
 };
