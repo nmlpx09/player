@@ -25,6 +25,7 @@ $(RUN): $(OBJ)
 	$(CXX) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 install: $(RUN)
+	strip $(RUN)
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install -m 755 -s $(RUN) $(DESTDIR)$(PREFIX)/bin/
 
