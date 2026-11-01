@@ -1,7 +1,7 @@
 CXX ?= g++
-CXXFLAGS ?= -O3 -std=c++23 -pedantic -Wall -W -Werror -Wextra
+CXXFLAGS ?= -O3 -std=c++23 -pedantic -Wall -W -Werror -Wextra -march=native -funroll-loops -flto
 CXXFLAGS += -I. $(FLAC_CFLAGS)
-LDFLAGS ?=
+LDFLAGS ?= -flto
 
 PREFIX ?= /usr
 DESTDIR ?=
